@@ -29,6 +29,7 @@ interface HeaderProps {
       | "change-password"
       | "user-history"
       | "recharge",
+    subTab?: "card" | "atm",
   ) => void;
   activeView:
   | "home"
@@ -94,7 +95,7 @@ export default function Header({
         <nav className="hidden lg:flex items-center gap-1.5">
           <button
             onClick={() => {
-              onNavigate("recharge");
+              onNavigate("recharge", "card");
             }}
             id="nav-recharge-card"
             className="flex items-center gap-1.5 bg-linear-to-r from-orange-500 via-amber-500 to-yellow-500 text-stone-950 hover:brightness-110 active:scale-95 transform transition duration-305 font-black py-2 px-4.5 rounded-xl border border-amber-300/40 shadow-[0_0_15px_rgba(245,158,11,0.4)] text-xs uppercase tracking-wider cursor-pointer"
@@ -105,7 +106,7 @@ export default function Header({
 
           <button
             onClick={() => {
-              onNavigate("recharge");
+              onNavigate("recharge", "atm");
             }}
             id="nav-recharge-atm"
             className="flex items-center gap-1.5 bg-linear-to-r from-emerald-500 via-teal-500 to-cyan-500 text-stone-950 hover:brightness-110 active:scale-95 transform transition duration-305 font-black py-2 px-4.5 rounded-xl border border-emerald-300/40 shadow-[0_0_15px_rgba(16,185,129,0.4)] text-xs uppercase tracking-wider cursor-pointer"
@@ -283,7 +284,7 @@ export default function Header({
         <div className="lg:hidden bg-stone-950/95 border-t border-amber-500/10 py-4 px-4 space-y-2 animate-in slide-in-from-top duration-300">
           <button
             onClick={() => {
-              onNavigate("recharge");
+              onNavigate("recharge", "card");
               setMobileMenuOpen(false);
             }}
             className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-linear-to-r from-orange-500 via-amber-500 to-yellow-500 text-stone-950 font-black text-xs uppercase tracking-wider transition"
@@ -294,7 +295,7 @@ export default function Header({
 
           <button
             onClick={() => {
-              onNavigate("recharge");
+              onNavigate("recharge", "atm");
               setMobileMenuOpen(false);
             }}
             className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-linear-to-r from-emerald-500 via-teal-500 to-cyan-500 text-stone-950 font-black text-xs uppercase tracking-wider transition"
