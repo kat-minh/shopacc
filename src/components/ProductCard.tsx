@@ -1,4 +1,5 @@
 import { GameAccount } from "../data";
+import { useTranslation } from "react-i18next";
 import { Gamepad2, ArrowRight } from "lucide-react";
 
 interface ProductCardProps {
@@ -13,6 +14,7 @@ export default function ProductCard({
   onSelect,
   onBuy,
 }: ProductCardProps) {
+  const { t } = useTranslation();
   const isAvailable = account.status === "Available";
 
   return (
@@ -29,7 +31,7 @@ export default function ProductCard({
         {/* Absolute indicators */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
           <span className="bg-red-800/90 border border-amber-300 text-white font-extrabold text-[10px] px-2.5 py-0.5 rounded shadow">
-            MÃ: {account.id}
+            {t("productCard.code")}: {account.id}
           </span>
           <span className="bg-[#4d0808]/90 text-amber-300 border border-amber-500/20 font-black text-[9px] px-2 py-0.5 rounded shadow uppercase">
             {account.game.replace("Dragon Ball ", "DB ")}
@@ -40,11 +42,11 @@ export default function ProductCard({
         <div className="absolute top-3 right-3">
           {isAvailable ? (
             <span className="bg-emerald-600 text-white font-black text-xs px-2.5 py-1 rounded-full uppercase border border-emerald-400 shadow animate-pulse">
-              CÒN HÀNG
+              {t("productCard.inStock")}
             </span>
           ) : (
             <span className="bg-stone-600 text-stone-200 font-extrabold text-xs px-2.5 py-1 rounded-full uppercase border border-stone-500 shadow">
-              ĐÃ BÁN
+              {t("productCard.sold")}
             </span>
           )}
         </div>
@@ -61,7 +63,7 @@ export default function ProductCard({
       <div className="p-4 grow flex flex-col justify-between">
         <div>
           <span className="text-[10px] text-amber-400/90 uppercase tracking-widest font-black block mb-1">
-            {account.category}
+            {t("categories." + account.category, account.category)}
           </span>
           <h4
             className="font-extrabold text-stone-100 text-sm leading-snug line-clamp-2 hover:underline cursor-pointer transition"
@@ -113,7 +115,7 @@ export default function ProductCard({
             </div>
             {account.originalPrice > account.price ? (
               <span className="text-[10px] bg-red-600 text-white font-black px-1.5 py-0.5 rounded">
-                GIẢM{" "}
+                {t("productCard.discount")}{" "}
                 {Math.round(
                   ((account.originalPrice - account.price) /
                     account.originalPrice) *
@@ -130,7 +132,7 @@ export default function ProductCard({
               onClick={() => onSelect(account)}
               className="bg-red-950 hover:bg-red-900 border border-amber-500/25 text-amber-200 py-2 px-1 rounded-xl text-xs font-black transition flex items-center justify-center gap-1"
             >
-              CHI TIẾT ACC
+              {t("productCard.viewDetails")}
             </button>
 
             {isAvailable ? (
@@ -138,7 +140,7 @@ export default function ProductCard({
                 onClick={() => onBuy(account)}
                 className="bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-2 px-1 rounded-xl text-xs font-black shadow-md flex items-center justify-center gap-1 transition"
               >
-                MUA NGAY
+                {t("productCard.buyNow")}
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             ) : (
@@ -146,7 +148,7 @@ export default function ProductCard({
                 disabled
                 className="bg-stone-800 text-stone-400/80 py-2 px-1 rounded-xl text-xs font-bold cursor-not-allowed text-center"
               >
-                HẾT HÀNG
+                {t("productCard.outOfStock")}
               </button>
             )}
           </div>

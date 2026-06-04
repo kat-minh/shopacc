@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   GameAccount,
   LuckyWheelGame,
@@ -86,6 +87,7 @@ const pathToView = (pathname: string): AppView => {
 };
 
 export default function App() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -504,8 +506,7 @@ export default function App() {
         <div className="bg-linear-to-r from-amber-500 via-yellow-400 to-amber-500 text-red-950 font-black text-xs py-2 px-4 shadow text-center flex items-center justify-center gap-2 overflow-hidden">
           <span className="animate-bounce">📣</span>
           <p className="uppercase tracking-wider truncate">
-            Hệ thống bán acc Dragon Ball Legends tự động hainagaming.com đang tặng
-            giftcode mừng máy chủ mới! Nạp Momo / ATM cộng 10% giá trị.
+            {t("app.tickerNews")}
           </p>
         </div>
       )}
@@ -717,7 +718,7 @@ export default function App() {
                       <div className="flex items-center gap-1.5">
                         <Trophy className="w-4 h-4 text-amber-400 animate-bounce" />
                         <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider">
-                          ĐUA TOP
+                          {t("home.topRankTitle")}
                         </h3>
                         {/* Interactive Tooltip for Quy định */}
                         <div className="group relative cursor-pointer flex items-center justify-center">
@@ -730,19 +731,19 @@ export default function App() {
                               color: theme === "light" ? "var(--app-text-primary)" : "#d4d1c8",
                             }}
                           >
-                            <h5 className="font-bold text-amber-300 uppercase mb-1.5 border-b border-amber-500/20 pb-1">QUY ĐỊNH ĐUA TOP</h5>
+                            <h5 className="font-bold text-amber-300 uppercase mb-1.5 border-b border-amber-500/20 pb-1">{t("home.topRankRules")}</h5>
                             <ul className="space-y-1.5">
                               <li className="flex items-start gap-1">
                                 <span>🎁</span>
-                                <span><strong>Top 1:</strong> Acc VIP DBL 500k tự chọn.</span>
+                                <span>{t("home.topRankRule1")}</span>
                               </li>
                               <li className="flex items-start gap-1">
                                 <span>🎁</span>
-                                <span><strong>Top 2-3:</strong> Nhận giftcode 200k/100k ví.</span>
+                                <span>{t("home.topRankRule2")}</span>
                               </li>
                               <li className="flex items-start gap-1">
                                 <span>⏱</span>
-                                <span>Chốt <strong>23:59 ngày 30 hàng tháng</strong>. Trao thưởng tự động qua hộp thư.</span>
+                                <span>{t("home.topRankRule3")}</span>
                               </li>
                             </ul>
                             <div
@@ -764,7 +765,7 @@ export default function App() {
                             : "text-stone-300"
                             }`}
                         >
-                          T.6
+                          {t("home.monthJune")}
                         </button>
                         <button
                           onClick={() => setActiveMonthTab("may")}
@@ -773,7 +774,7 @@ export default function App() {
                             : "text-stone-300"
                             }`}
                         >
-                          T.5
+                          {t("home.monthMay")}
                         </button>
                       </div>
                     </div>
@@ -816,7 +817,7 @@ export default function App() {
                   </div>
 
                   <div className="bg-red-600/20 text-red-300 text-[9px] font-black px-2 py-1 rounded border border-red-500/20 text-center mt-2">
-                    🎁 TOP 1: ACC 50K CRYSTALS VIP
+                    {t("home.top1Reward")}
                   </div>
                 </div>
               </div>
@@ -830,11 +831,10 @@ export default function App() {
                   <Flame className="w-6 h-6 text-amber-500 animate-pulse" />
                   <div>
                     <h3 className="text-lg md:text-xl font-black uppercase tracking-wider text-amber-300">
-                      DANH MỤC NICK RỒNG THẦN ĐANG BÁN
+                      {t("home.catalogTitle")}
                     </h3>
                     <p className="text-[10px] text-stone-400">
-                      Nhấn vào "CHI TIẾT ACC" để xem đầy đủ lực chiến và nhân
-                      vật
+                      {t("home.catalogDesc")}
                     </p>
                   </div>
                 </div>
@@ -844,7 +844,7 @@ export default function App() {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Tìm kiếm: crystals, UL, Gogeta..."
+                      placeholder={t("home.searchPlaceholder")}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full sm:w-60 bg-red-950 border border-amber-500/25 rounded-xl py-2 px-3 text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-semibold"
@@ -861,9 +861,7 @@ export default function App() {
                           : "text-stone-300 hover:text-[#ffffff]"
                           }`}
                       >
-                        {cat === "Tất cả"
-                          ? "Tất cả"
-                          : cat.replace("DANH MỤC ACC ", "")}
+                        {t("categories." + cat, cat)}
                       </button>
                     ))}
                   </div>
@@ -875,8 +873,7 @@ export default function App() {
                 <div className="text-center py-12 bg-red-950/20 rounded-2xl border border-dashed border-amber-500/15">
                   <span className="text-3xl">🧩</span>
                   <p className="text-stone-400 font-bold mt-2 text-sm">
-                    Không tìm thấy tài khoản Dragon Ball Legends nào khớp yêu
-                    cầu.
+                    {t("home.noAccountsFound")}
                   </p>
                   <button
                     onClick={() => {
@@ -885,7 +882,7 @@ export default function App() {
                     }}
                     className="mt-3 bg-amber-500 text-red-950 font-black text-xs py-1.5 px-3 rounded transition hover:bg-amber-400"
                   >
-                    RESET BỘ LỌC TÌM KIẾM
+                    {t("home.resetFilters")}
                   </button>
                 </div>
               ) : (

@@ -1,4 +1,5 @@
 import { useState, FormEvent, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { CARD_PROVIDERS, CARD_VALUES } from "../data";
 import {
   DollarSign,
@@ -28,6 +29,7 @@ export default function RechargeSection({
   activeTab,
   setActiveTab,
 }: RechargeSectionProps) {
+  const { t } = useTranslation();
   // Card formulation states
   const [selectedProvider, setSelectedProvider] = useState<string>("VIETTEL");
   const [selectedAmount, setSelectedAmount] = useState<number>(50000);
@@ -55,7 +57,7 @@ export default function RechargeSection({
     if (!cardSerial.trim() || !cardPin.trim()) {
       setRechargeAlert({
         type: "error",
-        text: "Vui lòng nhập đầy đủ Số Serial và Mã Thẻ Cào!",
+        text: t("recharge.errMissingFields"),
       });
       return;
     }
@@ -75,14 +77,14 @@ export default function RechargeSection({
     if (success) {
       setRechargeAlert({
         type: "success",
-        text: `Nạp thẻ ${selectedProvider} thành công! Số tiền gốc ${selectedAmount.toLocaleString("vi-VN")}đ đã được cộng vào số dư tài khoản của bạn.`,
+        text: t("recharge.successCard", { provider: selectedProvider, amount: selectedAmount.toLocaleString("vi-VN") }),
       });
       setCardSerial("");
       setCardPin("");
     } else {
       setRechargeAlert({
         type: "error",
-        text: "Lỗi nạp thẻ cào! Vui lòng kiểm tra lại tính hợp lệ của serial và mã pin.",
+        text: t("recharge.errCard"),
       });
     }
   };
@@ -101,7 +103,7 @@ export default function RechargeSection({
             : "bg-red-950/40 text-stone-300 border border-amber-500/10 hover:bg-red-950/80"
             }`}
         >
-          Nạp Thẻ Cào
+          {t("recharge.tabCard")}
         </button>
         <button
           onClick={() => setActiveTab("atm")}
@@ -110,7 +112,7 @@ export default function RechargeSection({
             : "bg-red-950/40 text-stone-300 border border-amber-500/10 hover:bg-red-950/80"
             }`}
         >
-          Nạp ATM / MoMo
+          {t("recharge.tabAtm")}
         </button>
       </div>
 
@@ -120,10 +122,10 @@ export default function RechargeSection({
           <div className="bg-[#4d0808]/80 p-5 rounded-2xl border border-amber-500/10 space-y-5">
             <div>
               <h4 className="font-extrabold text-stone-100 uppercase text-lg">
-                Nạp Thẻ Cào
+                {t("recharge.titleCard")}
               </h4>
               <p className="text-xs text-rose-300 font-semibold mt-1">
-                Tự động 24/7 - Nhập sai mệnh giá sẽ mất thẻ.
+                {t("recharge.descCard")}
               </p>
             </div>
 
@@ -134,7 +136,7 @@ export default function RechargeSection({
               {/* Publisher selection */}
               <div>
                 <label className="block font-bold text-amber-300 text-xs uppercase mb-2">
-                  Nhà mạng (Ưu tiên Viettel, Vinaphone)
+                  {t("recharge.labelProvider")}
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {CARD_PROVIDERS.map((provider) => (
@@ -159,7 +161,7 @@ export default function RechargeSection({
               {/* Price values Selection */}
               <div>
                 <label className="block font-bold text-amber-300 text-xs uppercase mb-2">
-                  Mệnh giá
+                  {t("recharge.labelAmount")}
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {CARD_VALUES.map((val) => (
@@ -172,7 +174,7 @@ export default function RechargeSection({
                         : "bg-red-950/60 text-stone-300 border-amber-500/5 hover:bg-neutral-900"
                         }`}
                     >
-                      Thẻ {val.label}
+                      {t("recharge.cardLabel", { amount: val.label })}
                     </button>
                   ))}
                 </div>
@@ -182,11 +184,11 @@ export default function RechargeSection({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-stone-300 text-xs uppercase mb-1.5">
-                    Serial thẻ
+                    {t("recharge.labelSerial")}
                   </label>
                   <input
                     type="text"
-                    placeholder="Nhập mã serial thẻ..."
+                    placeholder={t("recharge.placeholderSerial")}
                     value={cardSerial}
                     onChange={(e) => setCardSerial(e.target.value)}
                     className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
@@ -194,11 +196,11 @@ export default function RechargeSection({
                 </div>
                 <div>
                   <label className="block font-bold text-stone-300 text-xs uppercase mb-1.5">
-                    Mã thẻ
+                    {t("recharge.labelPin")}
                   </label>
                   <input
                     type="text"
-                    placeholder="Nhập mã pin thẻ..."
+                    placeholder={t("recharge.placeholderPin")}
                     value={cardPin}
                     onChange={(e) => setCardPin(e.target.value)}
                     className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
@@ -226,14 +228,14 @@ export default function RechargeSection({
                   : "bg-linear-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white"
                   }`}
               >
-                {isRecharging ? "Đang xác thực thẻ cào..." : "Nạp Thẻ"}
+                {isRecharging ? t("recharge.btnVerifyingCard") : t("recharge.btnSubmitCard")}
               </button>
             </form>
 
             <div className="border-t border-amber-500/10 pt-4 text-xs space-y-2 text-stone-400 leading-relaxed">
-              <p className="font-bold text-stone-300 text-[13px]">Lưu ý:</p>
-              <p>- Vui lòng nạp đúng mệnh giá, sai mệnh giá sẽ không được cộng tiền vào tài khoản.</p>
-              <p>- Thẻ cào bị treo ĐANG XỬ LÝ quá 10p kể từ lúc nạp thẻ xin vui lòng liên hện page để được hỗ trợ.</p>
+              <p className="font-bold text-stone-300 text-[13px]">{t("recharge.noticeTitle")}</p>
+              <p>{t("recharge.notice1")}</p>
+              <p>{t("recharge.notice2")}</p>
             </div>
 
           </div>
@@ -247,19 +249,19 @@ export default function RechargeSection({
               <div className="flex flex-col sm:flex-row items-start justify-between gap-4 bg-red-950/30 p-4 rounded-xl border border-amber-500/10 w-full">
                 <div className="space-y-1">
                   <h4 className="font-black text-amber-300 uppercase text-xs sm:text-sm tracking-wide">
-                    THÔNG TIN NGÂN HÀNG
+                    {t("recharge.titleAtm")}
                   </h4>
                   <div className="space-y-1 mt-2 text-xs sm:text-xs font-bold text-stone-200">
-                    <p>NGÂN HÀNG: <span className="text-red-500 font-extrabold">ACB</span></p>
-                    <p>SỐ TÀI KHOẢN: <span className="text-red-500 font-extrabold font-mono">17506391</span></p>
-                    <p>CHỦ TÀI KHOẢN: <span className="text-red-500 font-extrabold">DOAN KHAC Y</span></p>
+                    <p>{t("recharge.labelBank")} <span className="text-red-500 font-extrabold">ACB</span></p>
+                    <p>{t("recharge.labelAccountNumber")} <span className="text-red-500 font-extrabold font-mono">17506391</span></p>
+                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">DOAN KHAC Y</span></p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleCopy("17506391", "stk_acb")}
                     className="mt-3 bg-stone-600 hover:bg-stone-500 text-white px-3 py-1.5 text-[10px] font-bold rounded transition transform active:scale-95 duration-150 uppercase"
                   >
-                    {copiedText === "stk_acb" ? "Đã copy!" : "COPY SỐ TÀI KHOẢN"}
+                    {copiedText === "stk_acb" ? t("recharge.copied") : t("recharge.btnCopyAccount")}
                   </button>
                 </div>
                 {/* QR Code on the right */}
@@ -278,19 +280,19 @@ export default function RechargeSection({
               <div className="flex flex-col sm:flex-row items-start justify-between gap-4 bg-red-950/30 p-4 rounded-xl border border-amber-500/10 w-full">
                 <div className="space-y-1">
                   <h4 className="font-black text-amber-300 uppercase text-xs sm:text-sm tracking-wide">
-                    THÔNG TIN VÍ MOMO
+                    {t("recharge.titleMomo")}
                   </h4>
                   <div className="space-y-1 mt-2 text-xs sm:text-xs font-bold text-stone-200">
-                    <p>VÍ ĐIỆN TỬ: <span className="text-red-500 font-extrabold">MOMO</span></p>
-                    <p>SỐ ĐIỆN THOẠI: <span className="text-red-500 font-extrabold font-mono">0399881122</span></p>
-                    <p>CHỦ TÀI KHOẢN: <span className="text-red-500 font-extrabold">DOAN KHAC Y</span></p>
+                    <p>{t("recharge.labelMomo")} <span className="text-red-500 font-extrabold">MOMO</span></p>
+                    <p>{t("recharge.labelPhone")} <span className="text-red-500 font-extrabold font-mono">0399881122</span></p>
+                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">DOAN KHAC Y</span></p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleCopy("0399881122", "sdt_momo")}
                     className="mt-3 bg-stone-600 hover:bg-stone-500 text-white px-3 py-1.5 text-[10px] font-bold rounded transition transform active:scale-95 duration-150 uppercase"
                   >
-                    {copiedText === "sdt_momo" ? "Đã copy!" : "COPY SỐ ĐIỆN THOẠI"}
+                    {copiedText === "sdt_momo" ? t("recharge.copied") : t("recharge.btnCopyPhone")}
                   </button>
                 </div>
                 {/* QR Code on the right */}
@@ -308,7 +310,7 @@ export default function RechargeSection({
 
             {/* Transfer notes syntax section */}
             <div className="space-y-3">
-              <p className="text-xs sm:text-sm font-bold text-stone-200">Nội dung chuyển khoản:</p>
+              <p className="text-xs sm:text-sm font-bold text-stone-200">{t("recharge.transferContent")}</p>
               <div className="border-2 border-dashed border-red-500 bg-red-950/20 p-4 rounded-xl text-center">
                 <span className="font-extrabold text-red-500 text-xl tracking-wider select-all cursor-pointer">
                   NAP {currentUser.username}
@@ -317,24 +319,24 @@ export default function RechargeSection({
 
               <button
                 onClick={() => {
-                  alert("Hệ thống đã nhận lệnh xác nhận! Giao dịch của bạn đang được kiểm tra tự động.");
+                  alert(t("recharge.confirmSuccess"));
                 }}
                 className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-black py-2.5 px-6 rounded-lg text-sm uppercase transition active:scale-95 duration-150"
               >
-                Xác nhận. Tôi đã chuyển
+                {t("recharge.btnConfirmTransfer")}
               </button>
             </div>
 
             {/* Warning rules footer block */}
             <div className="text-xs sm:text-xs text-stone-300 space-y-2 pt-2 leading-relaxed">
               <p className="text-red-500 italic font-semibold">
-                Lưu ý: Sau khi chuyển khoản xong, hãy chờ "vài phút" rồi ấn "Xác nhận. Tôi đã chuyển".
+                {t("recharge.atmNotice1")}
               </p>
               <p className="flex items-center gap-1.5 font-semibold text-stone-200">
-                Khi chuyển khoản qua Ngân hàng (ATM) bạn cần ghi nội dung <span className="text-red-500 font-bold font-mono">NAP {currentUser.username}</span> bên trên.
+                {t("recharge.atmNotice2", { content: "NAP " + currentUser.username })}
               </p>
               <p className="text-red-400 font-medium">
-                Các giao dịch chuyển sai "Nội dung chuyển khoản" sẽ không được xử lý tự động. Hãy liên hệ Fanpage để được hỗ trợ.
+                {t("recharge.atmNotice3")}
               </p>
             </div>
           </div>

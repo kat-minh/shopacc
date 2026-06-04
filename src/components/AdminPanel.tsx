@@ -12,6 +12,10 @@ import {
   Search,
   Eye,
   Info,
+  LayoutDashboard,
+  BarChart3,
+  PieChart,
+  TrendingUp,
 } from "lucide-react";
 
 interface AdminPanelProps {
@@ -34,7 +38,7 @@ export default function AdminPanel({
   onEditAccount,
 }: AdminPanelProps) {
   // Navigation & tabs states
-  const [activeTab, setActiveTab] = useState<"transactions" | "accounts">("transactions");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "transactions" | "accounts">("dashboard");
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [selectedAcc, setSelectedAcc] = useState<GameAccount | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -48,6 +52,15 @@ export default function AdminPanel({
   // Search filter states
   const [txSearch, setTxSearch] = useState("");
   const [accSearch, setAccSearch] = useState("");
+
+  // Transaction filters
+  const [txPriceRange, setTxPriceRange] = useState<string>("All");
+  const [txUserFilter, setTxUserFilter] = useState<string>("All");
+
+  // Account filters
+  const [accGameFilter, setAccGameFilter] = useState<string>("All");
+  const [accPriceRange, setAccPriceRange] = useState<string>("All");
+  const [accStatusFilter, setAccStatusFilter] = useState<string>("All");
 
   // Add account form states
   const [id, setId] = useState<string>("");
@@ -220,25 +233,60 @@ export default function AdminPanel({
     .filter((tx) => tx.type === "card" || tx.type === "atm")
     .reduce((sum, tx) => sum + tx.amount, 0);
 
+  // Extract unique users list dynamically
+  const uniqueUsers = Array.from(new Set(transactions.map((t) => t.username))).filter(Boolean);
+
   // Filter transactions
   const filteredTxs = transactions.filter((tx) => {
     const q = txSearch.toLowerCase();
-    return (
+    const matchesSearch =
       tx.id.toLowerCase().includes(q) ||
       tx.username.toLowerCase().includes(q) ||
       tx.description.toLowerCase().includes(q) ||
-      tx.type.toLowerCase().includes(q)
-    );
+      tx.type.toLowerCase().includes(q);
+      
+    // User filter dropdown check
+    const matchesUser = txUserFilter === "All" || tx.username === txUserFilter;
+
+    // Price range dropdown check
+    let matchesPrice = true;
+    if (txPriceRange === "under_50k") {
+      matchesPrice = tx.amount < 50000;
+    } else if (txPriceRange === "50k_200k") {
+      matchesPrice = tx.amount >= 50000 && tx.amount <= 200000;
+    } else if (txPriceRange === "200k_500k") {
+      matchesPrice = tx.amount >= 200000 && tx.amount <= 500000;
+    } else if (txPriceRange === "over_500k") {
+      matchesPrice = tx.amount > 500000;
+    }
+
+    return matchesSearch && matchesUser && matchesPrice;
   });
 
   // Filter accounts
   const filteredAccs = accounts.filter((acc) => {
     const q = accSearch.toLowerCase();
-    return (
+    const matchesSearch =
       acc.id.toLowerCase().includes(q) ||
       acc.title.toLowerCase().includes(q) ||
-      acc.category.toLowerCase().includes(q)
-    );
+      acc.category.toLowerCase().includes(q);
+
+    const matchesGame = accGameFilter === "All" || acc.game.toLowerCase().includes(accGameFilter.toLowerCase());
+    const matchesStatus = accStatusFilter === "All" || acc.status === accStatusFilter;
+
+    // Price range dropdown check
+    let matchesPrice = true;
+    if (accPriceRange === "under_100k") {
+      matchesPrice = acc.price < 100000;
+    } else if (accPriceRange === "100k_300k") {
+      matchesPrice = acc.price >= 100000 && acc.price <= 300000;
+    } else if (accPriceRange === "300k_1m") {
+      matchesPrice = acc.price >= 300000 && acc.price <= 1000000;
+    } else if (accPriceRange === "over_1m") {
+      matchesPrice = acc.price > 1000000;
+    }
+
+    return matchesSearch && matchesGame && matchesStatus && matchesPrice;
   });
 
   // Paginated elements
@@ -255,6 +303,69 @@ export default function AdminPanel({
     );
     return tx ? tx.username : "Không rõ";
   };
+
+  // --- DASHBOARD DATA PROCESSING ---
+  // 1. Monthly Revenue Chart (type: buy_account, wheel_spin)
+  const monthlyRevenueData: { [key: string]: number } = {};
+  transactions.forEach((tx) => {
+    if (tx.type === "buy_account" || tx.type === "wheel_spin") {
+      const match = tx.time.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      const monthKey = match ? `${match[2]}/${match[3]}` : "06/2026";
+      monthlyRevenueData[monthKey] = (monthlyRevenueData[monthKey] || 0) + tx.amount;
+    }
+  });
+
+  // Ensure current and previous months are represented
+  const currentMonthStr = `${new Date().getMonth() + 1}/${new Date().getFullYear()}`;
+  const prevMonthVal = new Date().getMonth() === 0 ? 12 : new Date().getMonth();
+  const prevYearVal = new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear();
+  const prevMonthStr = `${prevMonthVal}/${prevYearVal}`;
+
+  if (Object.keys(monthlyRevenueData).length === 0) {
+    // Seed with mock data for display aesthetics if empty
+    monthlyRevenueData[prevMonthStr] = 850000;
+    monthlyRevenueData[currentMonthStr] = 450000;
+  } else {
+    if (monthlyRevenueData[currentMonthStr] === undefined) monthlyRevenueData[currentMonthStr] = 0;
+    if (monthlyRevenueData[prevMonthStr] === undefined) monthlyRevenueData[prevMonthStr] = 0;
+  }
+
+  const sortedMonths = Object.keys(monthlyRevenueData).sort((a, b) => {
+    const [ma, ya] = a.split("/").map(Number);
+    const [mb, yb] = b.split("/").map(Number);
+    return ya !== yb ? ya - yb : ma - mb;
+  });
+
+  const maxRevenue = Math.max(...Object.values(monthlyRevenueData), 100000);
+
+  // 2. Sales Status Ratio (Available vs. Sold)
+  const soldCount = accounts.filter((a) => a.status === "Sold").length;
+  const availableCount = accounts.filter((a) => a.status === "Available").length;
+  const maxProductStat = Math.max(soldCount, availableCount, 5);
+
+  // 3. Recharge Methods Donut Chart
+  let momoSum = 0;
+  let bankSum = 0;
+  let cardSum = 0;
+  transactions.forEach((tx) => {
+    if (tx.type === "atm") {
+      if (tx.description.toLowerCase().includes("momo")) {
+        momoSum += tx.amount;
+      } else {
+        bankSum += tx.amount;
+      }
+    } else if (tx.type === "card") {
+      cardSum += tx.amount;
+    }
+  });
+
+  // Fallbacks if no data exists
+  if (momoSum === 0 && bankSum === 0 && cardSum === 0) {
+    momoSum = 1200000;
+    bankSum = 2500000;
+    cardSum = 800000;
+  }
+  const totalRechargeSum = momoSum + bankSum + cardSum;
 
   return (
     <div className="max-w-6xl mx-auto my-6 space-y-8 text-stone-200">
@@ -323,6 +434,16 @@ export default function AdminPanel({
         <div className="md:col-span-3 space-y-4 bg-[#2c0404]/80 p-4 rounded-3xl border border-amber-500/10">
           <div className="space-y-2">
             <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2.5 transition ${activeTab === "dashboard"
+                ? "bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20"
+                : "text-stone-300 hover:bg-stone-900/50 hover:text-amber-400"
+                }`}
+            >
+              <LayoutDashboard className="w-4 h-4 shrink-0" />
+              Bảng điều khiển Dashboard
+            </button>
+            <button
               onClick={() => setActiveTab("transactions")}
               className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2.5 transition ${activeTab === "transactions"
                 ? "bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20"
@@ -364,6 +485,276 @@ export default function AdminPanel({
 
         {/* Right content tab pane */}
         <div className="md:col-span-9 space-y-4">
+          {/* TAB 0: DASHBOARD TAB WITH CHARTS */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-6">
+              {/* Charts grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* 1. Monthly Revenue Chart (Column Chart) */}
+                <div className="bg-[#4d0808] p-5 rounded-3xl border border-amber-500/20 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-amber-500/15 pb-2">
+                    <h5 className="font-extrabold uppercase text-xs text-stone-100 flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      Doanh thu cửa hàng theo tháng
+                    </h5>
+                    <span className="text-[10px] text-stone-400 font-bold uppercase">Biểu đồ cột</span>
+                  </div>
+                  
+                  <div className="flex justify-center items-center py-2 bg-red-950/20 rounded-2xl border border-amber-500/5">
+                    <svg width="100%" height="200" viewBox="0 0 400 200" className="overflow-visible">
+                      {/* Grid Lines */}
+                      <line x1="40" y1="30" x2="380" y2="30" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.1" />
+                      <line x1="40" y1="90" x2="380" y2="90" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.1" />
+                      <line x1="40" y1="150" x2="380" y2="150" stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.2" />
+                      
+                      {/* X & Y Axis */}
+                      <line x1="40" y1="30" x2="40" y2="150" stroke="#f59e0b" strokeWidth="1" opacity="0.2" />
+                      
+                      {/* Render columns */}
+                      {sortedMonths.map((m, i) => {
+                        const val = monthlyRevenueData[m] || 0;
+                        const colHeight = maxRevenue > 0 ? (val / maxRevenue) * 110 : 0;
+                        const colWidth = 45;
+                        const gap = 40;
+                        const startX = 80;
+                        const x = startX + i * (colWidth + gap);
+                        const y = 150 - colHeight;
+                        
+                        return (
+                          <g key={m} className="group cursor-pointer">
+                            {/* Bar gradient / hover effect */}
+                            <rect
+                              x={x}
+                              y={y}
+                              width={colWidth}
+                              height={Math.max(colHeight, 4)}
+                              rx="6"
+                              className="fill-amber-500 hover:fill-amber-400 transition-colors duration-200"
+                              opacity="0.85"
+                            />
+                            {/* Value label on top */}
+                            <text
+                              x={x + colWidth / 2}
+                              y={y - 8}
+                              textAnchor="middle"
+                              className="fill-stone-200 font-mono font-bold text-[9px]"
+                            >
+                              {val.toLocaleString()}đ
+                            </text>
+                            {/* X-axis label */}
+                            <text
+                              x={x + colWidth / 2}
+                              y="168"
+                              textAnchor="middle"
+                              className="fill-stone-400 font-bold text-[9px]"
+                            >
+                              {m}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+                </div>
+
+                {/* 2. Product Sales Ratio (Column Chart) */}
+                <div className="bg-[#4d0808] p-5 rounded-3xl border border-amber-500/20 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-amber-500/15 pb-2">
+                    <h5 className="font-extrabold uppercase text-xs text-stone-100 flex items-center gap-1.5">
+                      <BarChart3 className="w-4 h-4 text-amber-400" />
+                      Tỷ lệ sản phẩm Đã bán / Chưa bán
+                    </h5>
+                    <span className="text-[10px] text-stone-400 font-bold uppercase">Biểu đồ so sánh</span>
+                  </div>
+
+                  <div className="flex justify-center items-center py-2 bg-red-950/20 rounded-2xl border border-amber-500/5">
+                    <svg width="100%" height="200" viewBox="0 0 320 200" className="overflow-visible">
+                      {/* Grid Lines */}
+                      <line x1="40" y1="30" x2="280" y2="30" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.1" />
+                      <line x1="40" y1="90" x2="280" y2="90" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.1" />
+                      <line x1="40" y1="150" x2="280" y2="150" stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.2" />
+
+                      {/* Bar 1: Available */}
+                      {(() => {
+                        const hAvail = maxProductStat > 0 ? (availableCount / maxProductStat) * 110 : 0;
+                        const yAvail = 150 - hAvail;
+                        return (
+                          <g className="group cursor-pointer">
+                            <rect
+                              x="70"
+                              y={yAvail}
+                              width="50"
+                              height={Math.max(hAvail, 4)}
+                              rx="6"
+                              className="fill-emerald-500 hover:fill-emerald-400 transition-colors duration-200"
+                              opacity="0.85"
+                            />
+                            <text x="95" y={yAvail - 8} textAnchor="middle" className="fill-emerald-300 font-mono font-black text-[10px]">
+                              {availableCount}
+                            </text>
+                            <text x="95" y="168" textAnchor="middle" className="fill-emerald-400 font-extrabold text-[9px]">
+                              Chưa bán
+                            </text>
+                          </g>
+                        );
+                      })()}
+
+                      {/* Bar 2: Sold */}
+                      {(() => {
+                        const hSold = maxProductStat > 0 ? (soldCount / maxProductStat) * 110 : 0;
+                        const ySold = 150 - hSold;
+                        return (
+                          <g className="group cursor-pointer">
+                            <rect
+                              x="180"
+                              y={ySold}
+                              width="50"
+                              height={Math.max(hSold, 4)}
+                              rx="6"
+                              className="fill-rose-500 hover:fill-rose-400 transition-colors duration-200"
+                              opacity="0.85"
+                            />
+                            <text x="205" y={ySold - 8} textAnchor="middle" className="fill-rose-300 font-mono font-black text-[10px]">
+                              {soldCount}
+                            </text>
+                            <text x="205" y="168" textAnchor="middle" className="fill-rose-400 font-extrabold text-[9px]">
+                              Đã bán
+                            </text>
+                          </g>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* 3. Recharge Methods (Pie/Donut Chart) */}
+              <div className="bg-[#4d0808] p-5 rounded-3xl border border-amber-500/20 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-amber-500/15 pb-2">
+                  <h5 className="font-extrabold uppercase text-xs text-stone-100 flex items-center gap-1.5">
+                    <PieChart className="w-4 h-4 text-purple-400" />
+                    Cơ cấu nguồn dòng tiền nạp hệ thống
+                  </h5>
+                  <span className="text-[10px] text-stone-400 font-bold uppercase">Biểu đồ tròn / Donut</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center py-4 px-2 bg-red-950/20 rounded-2xl border border-amber-500/5">
+                  {/* SVG Donut */}
+                  <div className="flex justify-center relative">
+                    <svg width="160" height="160" viewBox="0 0 120 120" className="transform -rotate-90">
+                      {/* Background circle */}
+                      <circle cx="60" cy="60" r="50" fill="transparent" stroke="#2c0404" strokeWidth="12" />
+                      
+                      {/* Render Pie segments using dash offset */}
+                      {(() => {
+                        const r = 50;
+                        const circ = 2 * Math.PI * r; // 314.159
+                        
+                        const pMomo = totalRechargeSum > 0 ? (momoSum / totalRechargeSum) * 100 : 0;
+                        const pBank = totalRechargeSum > 0 ? (bankSum / totalRechargeSum) * 100 : 0;
+                        const pCard = totalRechargeSum > 0 ? (cardSum / totalRechargeSum) * 100 : 0;
+                        
+                        const dMomo = (pMomo / 100) * circ;
+                        const dBank = (pBank / 100) * circ;
+                        const dCard = (pCard / 100) * circ;
+                        
+                        return (
+                          <>
+                            {/* Momo segment - Purple */}
+                            {dMomo > 0 && (
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r={r}
+                                fill="transparent"
+                                stroke="#d946ef"
+                                strokeWidth="12"
+                                strokeDasharray={`${dMomo} ${circ}`}
+                                strokeDashoffset={0}
+                                className="transition-all duration-300"
+                              />
+                            )}
+                            {/* Bank/ATM segment - Blue */}
+                            {dBank > 0 && (
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r={r}
+                                fill="transparent"
+                                stroke="#3b82f6"
+                                strokeWidth="12"
+                                strokeDasharray={`${dBank} ${circ}`}
+                                strokeDashoffset={-dMomo}
+                                className="transition-all duration-300"
+                              />
+                            )}
+                            {/* Card segment - Orange */}
+                            {dCard > 0 && (
+                              <circle
+                                cx="60"
+                                cy="60"
+                                r={r}
+                                fill="transparent"
+                                stroke="#f97316"
+                                strokeWidth="12"
+                                strokeDasharray={`${dCard} ${circ}`}
+                                strokeDashoffset={-(dMomo + dBank)}
+                                className="transition-all duration-300"
+                              />
+                            )}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                    
+                    {/* Donut Center Label */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Tổng nạp</span>
+                      <span className="text-sm font-black text-amber-300 font-mono">
+                        {totalRechargeSum.toLocaleString()}đ
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Legends & percentages */}
+                  <div className="space-y-3 font-semibold text-xs text-stone-300">
+                    <div className="flex items-center justify-between border-b border-amber-500/5 pb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded bg-purple-500 shrink-0" />
+                        <span>Ví điện tử MoMo</span>
+                      </div>
+                      <span className="font-mono text-[#ffffff] font-bold">
+                        {momoSum.toLocaleString()}đ ({totalRechargeSum > 0 ? Math.round((momoSum / totalRechargeSum) * 100) : 0}%)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-amber-500/5 pb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded bg-blue-500 shrink-0" />
+                        <span>Ngân hàng (ATM)</span>
+                      </div>
+                      <span className="font-mono text-[#ffffff] font-bold">
+                        {bankSum.toLocaleString()}đ ({totalRechargeSum > 0 ? Math.round((bankSum / totalRechargeSum) * 100) : 0}%)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-amber-500/5 pb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded bg-orange-500 shrink-0" />
+                        <span>Nạp thẻ cào tự động</span>
+                      </div>
+                      <span className="font-mono text-[#ffffff] font-bold">
+                        {cardSum.toLocaleString()}đ ({totalRechargeSum > 0 ? Math.round((cardSum / totalRechargeSum) * 100) : 0}%)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TAB 1: TRANSACTIONS LIST */}
           {activeTab === "transactions" && (
             <div className="bg-[#4d0808] p-5 rounded-3xl border border-amber-500/20 shadow-xl space-y-4">
@@ -386,6 +777,58 @@ export default function AdminPanel({
                     }}
                     className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
+                </div>
+              </div>
+
+              {/* Advanced transaction filters */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-red-950/20 rounded-2xl border border-amber-500/10 text-xs">
+                <div>
+                  <label className="block text-[10px] text-stone-400 uppercase font-black mb-1">Chọn Người Dùng</label>
+                  <select
+                    value={txUserFilter}
+                    onChange={(e) => {
+                      setTxUserFilter(e.target.value);
+                      setTxPage(1);
+                    }}
+                    className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-200 font-bold"
+                  >
+                    <option value="All">Tất cả Người dùng</option>
+                    {uniqueUsers.map((user) => (
+                      <option key={user} value={user}>
+                        {user}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-stone-400 uppercase font-black mb-1">Khoảng Giá Biến Động</label>
+                  <select
+                    value={txPriceRange}
+                    onChange={(e) => {
+                      setTxPriceRange(e.target.value);
+                      setTxPage(1);
+                    }}
+                    className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-200 font-bold"
+                  >
+                    <option value="All">Tất cả Mức giá</option>
+                    <option value="under_50k">Dưới 50,000đ</option>
+                    <option value="50k_200k">50,000đ - 200,000đ</option>
+                    <option value="200k_500k">200,000đ - 500,000đ</option>
+                    <option value="over_500k">Trên 500,000đ</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      setTxPriceRange("All");
+                      setTxUserFilter("All");
+                      setTxSearch("");
+                      setTxPage(1);
+                    }}
+                    className="w-full bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 text-amber-400 py-2 px-3 rounded-xl border border-amber-500/20 text-[10px] font-black uppercase transition cursor-pointer"
+                  >
+                    Reset Bộ lọc
+                  </button>
                 </div>
               </div>
 
@@ -506,6 +949,70 @@ export default function AdminPanel({
                 </div>
               </div>
 
+              {/* Advanced account filters */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3 bg-red-950/20 rounded-2xl border border-amber-500/10 text-xs">
+                <div>
+                  <label className="block text-[10px] text-stone-400 uppercase font-black mb-1">Loại Game</label>
+                  <select
+                    value={accGameFilter}
+                    onChange={(e) => {
+                      setAccGameFilter(e.target.value);
+                      setAccPage(1);
+                    }}
+                    className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-200 font-bold"
+                  >
+                    <option value="All">Tất cả Game</option>
+                    <option value="Dragon Ball Legends">Dragon Ball Legends</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-stone-400 uppercase font-black mb-1">Trạng thái</label>
+                  <select
+                    value={accStatusFilter}
+                    onChange={(e) => {
+                      setAccStatusFilter(e.target.value);
+                      setAccPage(1);
+                    }}
+                    className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-200 font-bold"
+                  >
+                    <option value="All">Tất cả Trạng thái</option>
+                    <option value="Available">Chưa bán</option>
+                    <option value="Sold">Đã bán</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-stone-400 uppercase font-black mb-1">Khoảng Giá ACC</label>
+                  <select
+                    value={accPriceRange}
+                    onChange={(e) => {
+                      setAccPriceRange(e.target.value);
+                      setAccPage(1);
+                    }}
+                    className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-200 font-bold"
+                  >
+                    <option value="All">Tất cả Mức giá</option>
+                    <option value="under_100k">Dưới 100,000đ</option>
+                    <option value="100k_300k">100,000đ - 300,000đ</option>
+                    <option value="300k_1m">300,000đ - 1,000,000đ</option>
+                    <option value="over_1m">Trên 1,000,000đ</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      setAccGameFilter("All");
+                      setAccStatusFilter("All");
+                      setAccPriceRange("All");
+                      setAccSearch("");
+                      setAccPage(1);
+                    }}
+                    className="w-full bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 text-amber-400 py-2 px-3 rounded-xl border border-amber-500/20 text-[10px] font-black uppercase transition cursor-pointer"
+                  >
+                    Reset Bộ lọc
+                  </button>
+                </div>
+              </div>
+
               {paginatedAccs.length === 0 ? (
                 <div className="text-center py-10 bg-red-950/30 rounded-2xl border border-dashed border-amber-500/10 text-stone-400 text-xs">
                   Không tìm thấy tài khoản nào phù hợp bộ lọc.
@@ -545,11 +1052,11 @@ export default function AdminPanel({
                               </td>
                               <td className="px-3 py-3 text-center">
                                 {acc.status === "Available" ? (
-                                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 py-0.5 px-2 rounded-full text-[10px] font-black">
+                                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 py-0.5 px-2 rounded-full text-[10px] font-black inline-block whitespace-nowrap">
                                     Chưa bán
                                   </span>
                                 ) : (
-                                  <span className="bg-stone-800 text-stone-400 border border-stone-700 py-0.5 px-2 rounded-full text-[10px] font-black">
+                                  <span className="bg-stone-800 text-stone-400 border border-stone-700 py-0.5 px-2 rounded-full text-[10px] font-black inline-block whitespace-nowrap">
                                     Đã bán
                                   </span>
                                 )}

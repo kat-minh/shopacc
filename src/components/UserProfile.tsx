@@ -1,4 +1,5 @@
 import { Shield, User, Coins } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/useAuthStore";
 
 interface UserProfileProps {
@@ -7,6 +8,7 @@ interface UserProfileProps {
 
 export default function UserProfile({ onBack }: UserProfileProps) {
   const { currentUser, isAdmin } = useAuthStore();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-6">
@@ -15,10 +17,10 @@ export default function UserProfile({ onBack }: UserProfileProps) {
 
         <div className="border-b border-amber-500/15 pb-4">
           <h3 className="text-xl md:text-2xl font-black text-amber-300 uppercase tracking-wider">
-            Thông tin tài khoản cá nhân
+            {t("userProfile.title")}
           </h3>
           <p className="text-xs text-rose-300 font-semibold mt-1">
-            Quản lý hồ sơ thành viên Hải Na Gaming
+            {t("userProfile.subtitle")}
           </p>
         </div>
 
@@ -30,7 +32,7 @@ export default function UserProfile({ onBack }: UserProfileProps) {
               </div>
               <div>
                 <span className="text-[10px] text-stone-400 uppercase font-black block">
-                  Tên tài khoản / ID
+                  {t("userProfile.usernameId")}
                 </span>
                 <span className="text-sm font-bold text-stone-100">
                   {currentUser.username}
@@ -38,7 +40,7 @@ export default function UserProfile({ onBack }: UserProfileProps) {
               </div>
             </div>
             <span className="bg-amber-500 text-red-950 text-[10px] font-black uppercase px-2.5 py-1 rounded-full border border-amber-300">
-              {isAdmin ? "Quản trị viên" : "Thành viên"}
+              {isAdmin ? t("userProfile.roleAdmin") : t("userProfile.roleMember")}
             </span>
           </div>
 
@@ -49,14 +51,14 @@ export default function UserProfile({ onBack }: UserProfileProps) {
               </div>
               <div>
                 <span className="text-[10px] text-stone-400 uppercase font-black block">
-                  Số dư hiện tại
+                  {t("userProfile.currentBalance")}
                 </span>
                 <span className="text-sm font-bold text-stone-100">
                   {currentUser.balance.toLocaleString("vi-VN")}đ
                 </span>
               </div>
             </div>
-            <span className="text-xs text-amber-400 font-black">Khả dụng</span>
+            <span className="text-xs text-amber-400 font-black">{t("userProfile.available")}</span>
           </div>
 
           <div className="flex items-center gap-3 p-4 bg-red-950/60 rounded-2xl border border-amber-500/10">
@@ -65,10 +67,10 @@ export default function UserProfile({ onBack }: UserProfileProps) {
             </div>
             <div>
               <span className="text-[10px] text-stone-400 uppercase font-black block">
-                Bảo mật tài khoản
+                {t("userProfile.security")}
               </span>
               <span className="text-xs font-semibold text-emerald-400">
-                Đã kích hoạt lớp bảo vệ tự động
+                {t("userProfile.securityStatus")}
               </span>
             </div>
           </div>

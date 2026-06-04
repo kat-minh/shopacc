@@ -82,7 +82,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
     price: 65000,
     originalPrice: 120000,
     imageUrl:
-      "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+      "https://shopgamedbl.com/tep-tin/28077606311.gif",
     avatarUrl:
       "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
     stats: {
@@ -113,7 +113,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
     price: 90000,
     originalPrice: 180000,
     imageUrl:
-      "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80",
+      "https://shopgamedbl.com/tep-tin/28077606311.gif",
     avatarUrl:
       "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=100&auto=format&fit=crop&q=80",
     stats: {
@@ -143,7 +143,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
     price: 390000,
     originalPrice: 850000,
     imageUrl:
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80",
+      "https://shopgamedbl.com/tep-tin/28077606311.gif",
     avatarUrl:
       "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=100&auto=format&fit=crop&q=80",
     stats: {

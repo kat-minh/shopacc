@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DollarSign,
   CreditCard,
@@ -58,10 +59,18 @@ export default function Header({
   theme,
   onToggleTheme,
 }: HeaderProps) {
+  const { t, i18n } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
   const isGuest = currentUser.username === "Khách";
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    localStorage.setItem("haina_lang", lng);
+    setLangDropdownOpen(false);
+  };
 
   return (
     <header className="bg-stone-900/95 backdrop-blur-md border-b-2 border-amber-500/40 shadow-[0_4px_30px_rgba(0,0,0,0.5)] sticky top-0 z-50 transition-all duration-300">
@@ -83,10 +92,10 @@ export default function Header({
           </div>
           <div>
             <h1 className="text-[13px] min-[360px]:text-base sm:text-xl lg:text-2xl font-black bg-linear-to-r from-amber-400 via-yellow-200 to-amber-400 bg-clip-text text-transparent tracking-widest font-sans uppercase drop-shadow-[0_2px_8px_rgba(245,158,11,0.3)]">
-              HAINAGAMING.COM
+              {t("header.title")}
             </h1>
             <p className="text-[7px] sm:text-[9px] text-stone-400 font-semibold tracking-wider uppercase">
-              SIÊU THỊ ACC GAME CHUYÊN NGHIỆP
+              {t("header.subtitle")}
             </p>
           </div>
         </div>
@@ -101,7 +110,7 @@ export default function Header({
             className="flex items-center gap-1.5 bg-linear-to-r from-orange-500 via-amber-500 to-yellow-500 text-stone-950 hover:brightness-110 active:scale-95 transform transition duration-305 font-black py-2 px-4.5 rounded-xl border border-amber-300/40 shadow-[0_0_15px_rgba(245,158,11,0.4)] text-xs uppercase tracking-wider cursor-pointer"
           >
             <DollarSign className="w-3.5 h-3.5" />
-            Nạp Thẻ Cào
+            {t("header.rechargeCard")}
           </button>
 
           <button
@@ -112,7 +121,7 @@ export default function Header({
             className="flex items-center gap-1.5 bg-linear-to-r from-emerald-500 via-teal-500 to-cyan-500 text-stone-950 hover:brightness-110 active:scale-95 transform transition duration-305 font-black py-2 px-4.5 rounded-xl border border-emerald-300/40 shadow-[0_0_15px_rgba(16,185,129,0.4)] text-xs uppercase tracking-wider cursor-pointer"
           >
             <CreditCard className="w-3.5 h-3.5" />
-            ATM / MoMo
+            {t("header.rechargeAtm")}
           </button>
 
           {isAdmin && !isGuest && (
@@ -125,13 +134,49 @@ export default function Header({
                 }`}
             >
               <ShieldAlert className="w-3.5 h-3.5" />
-              Quản Trị
+              {t("header.admin")}
             </button>
           )}
         </nav>
 
         {/* User Account area (Desktop) / Login Button */}
         <div className="flex items-center gap-3">
+          {/* Language Switcher Dropdown */}
+          <div className="relative" onMouseLeave={() => setLangDropdownOpen(false)}>
+            <button
+              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+              onMouseEnter={() => setLangDropdownOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-amber-500/15 bg-stone-900/70 px-3 py-2 text-xs font-bold uppercase tracking-wider text-stone-200 transition hover:border-amber-400/50 hover:text-amber-300 cursor-pointer"
+            >
+              <span>{i18n.language === "vi" ? "🇻🇳 VI" : i18n.language === "en" ? "🇺🇸 EN" : "🇪🇸 ES"}</span>
+              <ChevronDown className="w-3 h-3 text-stone-400" />
+            </button>
+            {langDropdownOpen && (
+              <div className="absolute right-0 top-full pt-1.5 w-32 z-50">
+                <div className="bg-stone-950 border border-amber-500/25 rounded-2xl shadow-2xl overflow-hidden py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <button
+                    onClick={() => changeLanguage("vi")}
+                    className={`w-full text-left px-4 py-2 text-xs font-bold flex items-center gap-2 hover:bg-stone-900 hover:text-amber-400 transition ${i18n.language === "vi" ? "text-amber-400" : "text-stone-300"}`}
+                  >
+                    <span>🇻🇳</span> Tiếng Việt
+                  </button>
+                  <button
+                    onClick={() => changeLanguage("en")}
+                    className={`w-full text-left px-4 py-2 text-xs font-bold flex items-center gap-2 hover:bg-stone-900 hover:text-amber-400 transition ${i18n.language === "en" ? "text-amber-400" : "text-stone-300"}`}
+                  >
+                    <span>🇺🇸</span> English
+                  </button>
+                  <button
+                    onClick={() => changeLanguage("es")}
+                    className={`w-full text-left px-4 py-2 text-xs font-bold flex items-center gap-2 hover:bg-stone-900 hover:text-amber-400 transition ${i18n.language === "es" ? "text-amber-400" : "text-stone-300"}`}
+                  >
+                    <span>🇪🇸</span> Español
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={onToggleTheme}
             className="hidden sm:flex items-center gap-2 rounded-xl border border-amber-500/15 bg-stone-900/70 px-3 py-2 text-xs font-bold uppercase tracking-wider text-stone-200 transition hover:border-amber-400/50 hover:text-amber-300"
@@ -143,7 +188,7 @@ export default function Header({
             ) : (
               <MoonStar className="w-4 h-4" />
             )}
-            {theme === "dark" ? "Light" : "Dark"}
+            {theme === "dark" ? t("header.light") : t("header.dark")}
           </button>
 
           {isGuest ? (
@@ -153,7 +198,7 @@ export default function Header({
               className="bg-linear-to-r from-amber-500 to-yellow-400 text-stone-950 py-2 px-5 rounded-xl text-xs font-black transition shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:brightness-110 active:scale-95 flex items-center gap-1.5 uppercase tracking-wider"
             >
               <LogIn className="w-4 h-4" />
-              Đăng Nhập
+              {t("header.login")}
             </button>
           ) : (
             /* User Panel with Dropdown */
@@ -172,13 +217,13 @@ export default function Header({
                     <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
                   </div>
                   <span className="text-[9px] text-stone-500 block -mt-0.5">
-                    {isAdmin ? "Quản trị viên" : "Hội viên"}
+                    {isAdmin ? t("header.roleAdmin") : t("header.roleMember")}
                   </span>
                 </div>
 
                 <div className="sm:border-l sm:border-stone-800 sm:pl-2 text-right">
                   <span className="text-[8px] text-amber-500/70 hidden sm:block uppercase font-bold tracking-wider">
-                    Số dư
+                    {t("header.balance")}
                   </span>
                   <span className="text-[10px] sm:text-xs font-black text-amber-400 font-mono flex items-center gap-0.5">
                     <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-500 animate-spin-slow shrink-0" />
@@ -202,7 +247,7 @@ export default function Header({
                         className="haina-dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-stone-300 hover:bg-stone-900 hover:text-amber-400 flex items-center gap-2 transition"
                       >
                         <ShieldAlert className="w-4 h-4 text-rose-500 animate-pulse" />
-                        Trang quản trị Admin
+                        {t("header.adminPanel")}
                       </button>
                     ) : (
                       <>
@@ -214,7 +259,7 @@ export default function Header({
                           className="haina-dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-stone-300 hover:bg-stone-900 hover:text-amber-400 flex items-center gap-2 transition"
                         >
                           <User className="w-4 h-4 text-amber-500" />
-                          Thông tin cá nhân
+                          {t("header.personalInfo")}
                         </button>
                         <button
                           onClick={() => {
@@ -224,7 +269,7 @@ export default function Header({
                           className="haina-dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-stone-300 hover:bg-stone-900 hover:text-amber-400 flex items-center gap-2 transition"
                         >
                           <KeyRound className="w-4 h-4 text-amber-500" />
-                          Đổi mật khẩu
+                          {t("header.changePassword")}
                         </button>
                         <button
                           onClick={() => {
@@ -234,7 +279,7 @@ export default function Header({
                           className="haina-dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-stone-300 hover:bg-stone-900 hover:text-amber-400 flex items-center gap-2 transition"
                         >
                           <Inbox className="w-4 h-4 text-amber-500" />
-                          Tài khoản đã mua
+                          {t("header.purchasedAcc")}
                         </button>
                         <button
                           onClick={() => {
@@ -244,7 +289,7 @@ export default function Header({
                           className="haina-dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-stone-300 hover:bg-stone-900 hover:text-amber-400 flex items-center gap-2 transition"
                         >
                           <History className="w-4 h-4 text-amber-500" />
-                          Lịch sử giao dịch
+                          {t("header.transactionHistory")}
                         </button>
                       </>
                     )}
@@ -257,7 +302,7 @@ export default function Header({
                       className="haina-dropdown-item haina-dropdown-item-danger w-full text-left px-4 py-2 text-xs font-bold text-rose-400 hover:bg-rose-950/20 flex items-center gap-2 transition"
                     >
                       <LogOut className="w-4 h-4" />
-                      Đăng xuất
+                      {t("header.logout")}
                     </button>
                   </div>
                 </div>
@@ -282,6 +327,28 @@ export default function Header({
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-stone-950/95 border-t border-amber-500/10 py-4 px-4 space-y-2 animate-in slide-in-from-top duration-300">
+          {/* Mobile Language Switcher */}
+          <div className="grid grid-cols-3 gap-2 py-1">
+            <button
+              onClick={() => { changeLanguage("vi"); setMobileMenuOpen(false); }}
+              className={`py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition border flex items-center justify-center gap-1.5 ${i18n.language === "vi" ? "bg-amber-500 text-stone-950 border-amber-400" : "bg-stone-900 text-stone-300 border-stone-850"}`}
+            >
+              <span>🇻🇳</span> VI
+            </button>
+            <button
+              onClick={() => { changeLanguage("en"); setMobileMenuOpen(false); }}
+              className={`py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition border flex items-center justify-center gap-1.5 ${i18n.language === "en" ? "bg-amber-500 text-stone-950 border-amber-400" : "bg-stone-900 text-stone-300 border-stone-850"}`}
+            >
+              <span>🇺🇸</span> EN
+            </button>
+            <button
+              onClick={() => { changeLanguage("es"); setMobileMenuOpen(false); }}
+              className={`py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition border flex items-center justify-center gap-1.5 ${i18n.language === "es" ? "bg-amber-500 text-stone-950 border-amber-400" : "bg-stone-900 text-stone-300 border-stone-850"}`}
+            >
+              <span>🇪🇸</span> ES
+            </button>
+          </div>
+
           <button
             onClick={() => {
               onNavigate("recharge", "card");
@@ -290,7 +357,7 @@ export default function Header({
             className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-linear-to-r from-orange-500 via-amber-500 to-yellow-500 text-stone-950 font-black text-xs uppercase tracking-wider transition"
           >
             <DollarSign className="w-4 h-4" />
-            Nạp Thẻ Cào
+            {t("header.rechargeCard")}
           </button>
 
           <button
@@ -301,7 +368,7 @@ export default function Header({
             className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-linear-to-r from-emerald-500 via-teal-500 to-cyan-500 text-stone-950 font-black text-xs uppercase tracking-wider transition"
           >
             <CreditCard className="w-4 h-4" />
-            ATM / MoMo
+            {t("header.rechargeAtm")}
           </button>
 
           <button
@@ -313,7 +380,7 @@ export default function Header({
             ) : (
               <MoonStar className="w-4 h-4" />
             )}
-            {theme === "dark" ? "Bật giao diện sáng" : "Bật giao diện tối"}
+            {theme === "dark" ? t("header.light") : t("header.dark")}
           </button>
 
           {!isGuest && (
@@ -327,7 +394,7 @@ export default function Header({
                 className="w-full text-left flex items-center gap-3 py-2.5 px-4 rounded-xl text-stone-300 hover:bg-stone-900 hover:text-amber-400 font-bold text-xs uppercase transition"
               >
                 <User className="w-4 h-4 text-amber-500" />
-                Thông tin cá nhân
+                {t("header.personalInfo")}
               </button>
               <button
                 onClick={() => {
@@ -337,7 +404,7 @@ export default function Header({
                 className="w-full text-left flex items-center gap-3 py-2.5 px-4 rounded-xl text-stone-300 hover:bg-stone-900 hover:text-amber-400 font-bold text-xs uppercase transition"
               >
                 <KeyRound className="w-4 h-4 text-amber-500" />
-                Đổi mật khẩu
+                {t("header.changePassword")}
               </button>
               <button
                 onClick={() => {
@@ -347,7 +414,7 @@ export default function Header({
                 className="w-full text-left flex items-center gap-3 py-2.5 px-4 rounded-xl text-stone-300 hover:bg-stone-900 hover:text-amber-400 font-bold text-xs uppercase transition"
               >
                 <History className="w-4 h-4 text-amber-400" />
-                Lịch sử hoạt động
+                {t("header.activityHistory")}
               </button>
               <button
                 onClick={() => {
@@ -357,7 +424,7 @@ export default function Header({
                 className="w-full text-left flex items-center gap-3 py-2.5 px-4 rounded-xl text-rose-400 hover:bg-rose-950/20 font-bold text-xs uppercase transition"
               >
                 <LogOut className="w-4 h-4" />
-                Đăng xuất
+                {t("header.logout")}
               </button>
             </>
           )}
@@ -371,7 +438,7 @@ export default function Header({
               className="w-full text-left flex items-center gap-3 py-2.5 px-4 rounded-xl text-red-400 hover:bg-red-950/20 font-bold text-xs uppercase transition"
             >
               <ShieldAlert className="w-4 h-4" />
-              Quản Trị Hệ Thống
+              {t("header.adminPanel")}
             </button>
           )}
         </div>

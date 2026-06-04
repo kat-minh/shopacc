@@ -1,4 +1,5 @@
 import { useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { KeyRound, ShieldAlert } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -8,6 +9,7 @@ interface ChangePasswordProps {
 
 export default function ChangePassword({ onBack }: ChangePasswordProps) {
   const { currentUser } = useAuthStore();
+  const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,12 +22,12 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
     setSuccess("");
 
     if (newPassword.length < 4) {
-      setError("Mật khẩu mới phải từ 4 ký tự trở lên!");
+      setError(t("changePassword.errLength"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu xác nhận mới không khớp!");
+      setError(t("changePassword.errNotMatch"));
       return;
     }
 
@@ -41,14 +43,14 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
     if (userIndex !== -1) {
       // Validate current password
       if (users[userIndex].password !== currentPassword) {
-        setError("Mật khẩu hiện tại không chính xác!");
+        setError(t("changePassword.errIncorrectCurrent"));
         return;
       }
       users[userIndex].password = newPassword;
       localStorage.setItem("haina_registered_users", JSON.stringify(users));
     }
 
-    setSuccess("Đổi mật khẩu thành công!");
+    setSuccess(t("changePassword.success"));
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -64,21 +66,21 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
             <KeyRound className="w-8 h-8" />
           </div>
           <h3 className="text-xl font-black text-amber-300 tracking-wider font-sans uppercase">
-            Thay Đổi Mật Khẩu
+            {t("changePassword.title")}
           </h3>
           <p className="text-xs text-rose-300 font-semibold mt-1">
-            Đảm bảo an toàn thông tin tài khoản đại lý
+            {t("changePassword.subtitle")}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-              Mật khẩu hiện tại
+              {t("changePassword.currentPass")}
             </label>
             <input
               type="password"
-              placeholder="Nhập mật khẩu hiện tại..."
+              placeholder={t("changePassword.currentPassPlaceholder")}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 px-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
@@ -88,11 +90,11 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
 
           <div>
             <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-              Mật khẩu mới
+              {t("changePassword.newPass")}
             </label>
             <input
               type="password"
-              placeholder="Nhập mật khẩu mới..."
+              placeholder={t("changePassword.newPassPlaceholder")}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 px-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
@@ -102,11 +104,11 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
 
           <div>
             <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-              Xác nhận mật khẩu mới
+              {t("changePassword.confirmPass")}
             </label>
             <input
               type="password"
-              placeholder="Nhập lại mật khẩu mới..."
+              placeholder={t("changePassword.confirmPassPlaceholder")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 px-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
@@ -129,9 +131,9 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
 
           <button
             type="submit"
-            className="w-full bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-3 px-4 rounded-xl text-xs font-black shadow-lg shadow-amber-500/10 flex items-center justify-center gap-1.5 transition uppercase tracking-wider"
+            className="w-full bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-3 px-4 rounded-xl text-xs font-black shadow-lg shadow-amber-500/10 flex items-center justify-center gap-1.5 transition uppercase tracking-wider animate-pulse-slow"
           >
-            Lưu thay đổi
+            {t("changePassword.save")}
           </button>
         </form>
       </div>

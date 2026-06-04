@@ -1,5 +1,6 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Shield,
   User,
@@ -23,6 +24,7 @@ export default function LoginForm({
   onCancel,
 }: LoginFormProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [role, setRole] = useState<"user" | "admin">("user");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -39,7 +41,7 @@ export default function LoginForm({
         };
         onLoginSuccess(adminUser, true);
       } else {
-        setError("Mật khẩu Admin không chính xác! (Gợi ý: admin123)");
+        setError(t("loginForm.errAdminPass"));
       }
     } else {
       const cleanUsername = username.trim() || "Hoi_Vien_Haina";
@@ -72,10 +74,10 @@ export default function LoginForm({
             <KeyRound className="w-8 h-8" />
           </div>
           <h3 className="text-2xl font-black text-amber-300 tracking-wider font-sans uppercase">
-            ĐĂNG NHẬP HỆ THỐNG
+            {t("loginForm.title")}
           </h3>
           <p className="text-xs text-rose-300 font-semibold uppercase mt-1">
-            Hải Na Gaming - Giao dịch tự động siêu tốc
+            {t("loginForm.subtitle")}
           </p>
         </div>
 
@@ -94,7 +96,7 @@ export default function LoginForm({
             }`}
           >
             <User className="w-4 h-4" />
-            KHÁCH HÀNG
+            {t("loginForm.tabCustomer")}
           </button>
           <button
             type="button"
@@ -109,7 +111,7 @@ export default function LoginForm({
             }`}
           >
             <Shield className="w-4 h-4" />
-            QUẢN TRỊ VIÊN
+            {t("loginForm.tabAdmin")}
           </button>
         </div>
 
@@ -118,13 +120,13 @@ export default function LoginForm({
             <>
               <div>
                 <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-                  Tài khoản ID khách hàng
+                  {t("loginForm.customerIdLabel")}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-2.5 w-4 h-4 text-rose-300" />
                   <input
                     type="text"
-                    placeholder="Nhập tên đăng nhập của bạn..."
+                    placeholder={t("loginForm.customerIdPlaceholder")}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-bold"
@@ -132,28 +134,28 @@ export default function LoginForm({
                   />
                 </div>
                 <p className="text-[10px] text-stone-400 mt-1">
-                  Nhập tài khoản đã đăng ký hoặc tên bất kỳ để thử nghiệm.
+                  {t("loginForm.customerIdHelp")}
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-                  Số dư ban đầu (Chỉ cho tài khoản mới)
+                  {t("loginForm.initialBalance")}
                 </label>
                 <select
                   value={balance}
                   onChange={(e) => setBalance(Number(e.target.value))}
                   className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 px-4 text-sm text-amber-300 font-black focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                 >
-                  <option value={100000}>100,000 đ (Khởi động)</option>
+                  <option value={100000}>{t("loginForm.balance100k")}</option>
                   <option value={500000}>
-                    500,000 đ (Mua acc Rerol + Quay hũ)
+                    {t("loginForm.balance500k")}
                   </option>
                   <option value={1500000}>
-                    1,500,000 đ (Mua acc VIP sành điệu)
+                    {t("loginForm.balance1500k")}
                   </option>
                   <option value={5000000}>
-                    5,000,000 đ (Phá đảo vòng quay ngọc rồng)
+                    {t("loginForm.balance5000k")}
                   </option>
                 </select>
               </div>
@@ -162,7 +164,7 @@ export default function LoginForm({
             <>
               <div>
                 <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-                  Tài khoản Quản trị
+                  {t("loginForm.adminAccount")}
                 </label>
                 <div className="relative">
                   <Shield className="absolute left-3 top-2.5 w-4 h-4 text-red-400" />
@@ -177,13 +179,13 @@ export default function LoginForm({
 
               <div>
                 <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-                  Mật khẩu Quản trị viên
+                  {t("loginForm.adminPassword")}
                 </label>
                 <div className="relative">
                   <Key className="absolute left-3 top-2.5 w-4 h-4 text-red-400" />
                   <input
                     type="password"
-                    placeholder="Nhập mật khẩu Admin ban đầu..."
+                    placeholder={t("loginForm.adminPasswordPlaceholder")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-red-950 border border-red-500/30 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-mono tracking-widest"
@@ -191,8 +193,7 @@ export default function LoginForm({
                   />
                 </div>
                 <p className="text-[10px] text-amber-400 font-semibold mt-1.5 flex items-center gap-1">
-                  <Info className="w-3.5 h-3.5" /> Gợi ý mật khẩu:{" "}
-                  <strong className="underline text-stone-200">admin123</strong>
+                  <Info className="w-3.5 h-3.5" /> {t("loginForm.adminPasswordHelp")}
                 </p>
               </div>
             </>
@@ -211,7 +212,7 @@ export default function LoginForm({
               className="bg-red-950 hover:bg-red-900 text-amber-200 py-3 px-4 rounded-xl text-xs font-bold border border-amber-500/15 transition flex items-center justify-center gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" />
-              QUAY LẠI
+              {t("loginForm.back")}
             </button>
 
             <button
@@ -219,7 +220,7 @@ export default function LoginForm({
               className="bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-3 px-4 rounded-xl text-xs font-black shadow-lg shadow-amber-500/10 flex items-center justify-center gap-1.5 transition"
             >
               <LogIn className="w-4 h-4" />
-              ĐĂNG NHẬP
+              {t("loginForm.submit")}
             </button>
           </div>
 
@@ -229,7 +230,7 @@ export default function LoginForm({
               onClick={() => navigate("/register")}
               className="text-xs text-amber-400 hover:underline font-bold"
             >
-              Chưa có tài khoản? Đăng ký tại đây
+              {t("loginForm.noAccount")}
             </button>
           </div>
         </form>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { LuckyWheelGame, LuckyWheelPrize } from "../data";
 import {
   Star,
@@ -28,6 +29,7 @@ export default function LuckyWheel({
   isSpinning,
   setIsSpinning,
 }: LuckyWheelProps) {
+  const { t } = useTranslation();
   const [activeWheel, setActiveWheel] = useState<LuckyWheelGame | null>(null);
   const [spinRotation, setSpinRotation] = useState<number>(0);
   const [spinRewardResult, setSpinRewardResult] =
@@ -56,7 +58,10 @@ export default function LuckyWheel({
 
     if (userBalance < currentWheel.price) {
       alert(
-        `Số dư ví không đủ để tham gia vòng quay này! Lượt quay cần ${currentWheel.price.toLocaleString()}đ. Bạn đang có ${userBalance.toLocaleString()}đ trong ví.`,
+        t("luckyWheel.errBalance", {
+          price: currentWheel.price.toLocaleString(),
+          balance: userBalance.toLocaleString(),
+        })
       );
       document
         .getElementById("recharge-anchor")
@@ -117,8 +122,7 @@ export default function LuckyWheel({
     >
       <div className="flex items-center justify-between border-b border-amber-500/15 pb-3 mb-6">
         <h3 className="text-xl md:text-2xl font-black text-amber-300 tracking-wide flex items-center gap-2 uppercase">
-          <span className="animate-spin text-amber-400">☸</span> VÒNG QUAY MAY
-          MẮN NHẬN QUÀ VIP
+          <span className="animate-spin text-amber-400">☸</span> {t("luckyWheel.title")}
         </h3>
       </div>
 
@@ -128,14 +132,10 @@ export default function LuckyWheel({
           <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-transparent via-amber-400/40 to-transparent"></div>
 
           <h4 className="text-amber-400 font-extrabold text-sm uppercase tracking-wide">
-            {currentWheel?.title || "ĐANG CẬP NHẬT TRÒ CHƠI"}
+            {currentWheel?.title || t("luckyWheel.updatingGame")}
           </h4>
           <p className="text-stone-300 text-xs mt-1 mb-6">
-            Giá quay thử:{" "}
-            <span className="text-amber-400 font-black">
-              {currentWheel?.price.toLocaleString() || "35,000"}đ
-            </span>{" "}
-            / lượt
+            {t("luckyWheel.spinPrice", { price: currentWheel?.price.toLocaleString() || "35,000" })}
           </p>
 
           <div className="relative w-64 h-64 sm:w-72 sm:h-72 select-none mb-6">
@@ -225,20 +225,15 @@ export default function LuckyWheel({
                 : "bg-linear-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white"
             }`}
           >
-            {isSpinning ? "Đang quay..." : "QUAY NGAY ✦"}
+            {isSpinning ? t("luckyWheel.spinning") : t("luckyWheel.spinNow")}
           </button>
         </div>
 
         {/* RIGHT COLUMN: LIST OF AVAILABLE WHEEL GAMES */}
         <div className="lg:col-span-7 space-y-4">
           <div className="bg-amber-500/5 p-4 rounded-xl border border-amber-500/20 text-xs sm:text-sm leading-relaxed text-stone-300">
-            💡 <strong className="text-amber-300">Thể lệ & Luật chơi:</strong>{" "}
-            Nhấp vào sự kiện vòng quay muốn chơi dưới đây để kích hoạt nạp vòng
-            tương ứng. Khi quay trúng phần quà là{" "}
-            <span className="underline text-amber-200">Crystals</span> hoặc{" "}
-            <span className="underline text-amber-200">Acc Vip</span>, hệ thống
-            tự động ghi nhận vào Lịch Sử. Bạn có thể kiểm tra ở mục{" "}
-            <span className="text-amber-300 font-bold">Lịch Sử</span> phía trên.
+            💡 <strong className="text-amber-300">{t("luckyWheel.rulesTitle")}</strong>{" "}
+            {t("luckyWheel.rulesDesc")}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -266,16 +261,13 @@ export default function LuckyWheel({
                   </div>
                   <div className="space-y-1">
                     <span className="bg-[#4d0808] text-amber-300 font-bold px-2 py-0.5 rounded text-[9px] uppercase">
-                      Lượt đã chơi: {wh.playedCount}
+                      {t("luckyWheel.playedCount", { count: wh.playedCount })}
                     </span>
                     <h5 className="font-extrabold text-stone-100 text-xs uppercase leading-snug line-clamp-1">
                       {wh.title}
                     </h5>
                     <p className="text-rose-300 text-xs font-bold">
-                      Giá quay:{" "}
-                      <strong className="text-amber-300 font-black">
-                        {wh.price.toLocaleString()}đ
-                      </strong>
+                      {t("luckyWheel.priceLabel", { price: wh.price.toLocaleString() })}
                     </p>
                   </div>
                 </div>
@@ -308,16 +300,16 @@ export default function LuckyWheel({
 
             <div className="space-y-1">
               <h4 className="text-xl font-black text-amber-300 uppercase">
-                CHÚC MỪNG ANH EM!
+                {t("luckyWheel.modalCongratulation")}
               </h4>
               <p className="text-xs text-stone-300">
-                Lượt quay may mắn tại HAINAGAMING.COM đã có kết quả
+                {t("luckyWheel.modalSubtitle")}
               </p>
             </div>
 
             <div className="bg-[#2c0404] p-4 rounded-2xl border border-amber-400/30">
               <span className="text-[10px] text-stone-400 block uppercase font-bold mb-1">
-                Bạn đã quay trúng phần thưởng
+                {t("luckyWheel.modalPrizeLabel")}
               </span>
               <p
                 className="text-lg font-black text-amber-400 font-sans"
@@ -326,7 +318,7 @@ export default function LuckyWheel({
                 {spinRewardResult.name}
               </p>
               <p className="text-[10px] text-stone-300 mt-2">
-                Tỉ lệ quay trúng tương ứng: {spinRewardResult.chance}%
+                {t("luckyWheel.modalChanceLabel", { chance: spinRewardResult.chance })}
               </p>
             </div>
 
@@ -337,7 +329,7 @@ export default function LuckyWheel({
               }}
               className="w-full bg-linear-to-r from-amber-400 to-yellow-400 text-red-950 font-black py-2.5 rounded-xl text-xs uppercase cursor-pointer"
             >
-              ĐỒNG Ý VÀ THU HỒI QUÀ
+              {t("luckyWheel.modalBtnAccept")}
             </button>
           </div>
         </div>
