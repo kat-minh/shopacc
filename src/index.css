@@ -95,7 +95,9 @@ html[data-theme="light"] .bg-stone-900\/95 {
 
 html[data-theme="light"] .bg-stone-950,
 html[data-theme="light"] .bg-stone-950\/50,
-html[data-theme="light"] .bg-stone-950\/70 {
+html[data-theme="light"] .bg-stone-950\/70,
+html[data-theme="light"] .bg-stone-950\/90,
+html[data-theme="light"] .bg-stone-950\/95 {
   background-color: var(--app-card-strong) !important;
 }
 
