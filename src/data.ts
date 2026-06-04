@@ -1,3 +1,5 @@
+import videoConvertedGif from "./assets/images/video_converted.gif";
+
 export interface GameAccount {
   id: string;
   game: string;
@@ -81,8 +83,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
     title: "ACC REROL RỒNG THẦN: 35,000 Chrono Crystals + UL Broly 5★",
     price: 65000,
     originalPrice: 120000,
-    imageUrl:
-      "https://shopgamedbl.com/tep-tin/28077606311.gif",
+    imageUrl: videoConvertedGif,
     avatarUrl:
       "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
     stats: {
