@@ -535,7 +535,7 @@ export default function AdminPanel({
       matchesPrice = acc.price > 1000000;
     }
 
-    return matchesSearch && matchesGame && matchesStatus && matchesPrice;
+    return matchesSearch && matchesCategory && matchesStatus && matchesPrice;
   });
 
   // Paginated elements
