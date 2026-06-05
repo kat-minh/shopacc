@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Transaction, GameAccount } from "../data";
 import { Copy, Check, History, Inbox } from "lucide-react";
+import EmptyState from "./EmptyState";
 
 interface UserHistoryProps {
   transactions: Transaction[];
@@ -17,6 +19,7 @@ export default function UserHistory({
   hideHeader = false,
   viewMode = "all",
 }: UserHistoryProps) {
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState<
     "all" | "recharge" | "purchase" | "wheel"
   >("all");
@@ -88,15 +91,11 @@ export default function UserHistory({
           </div>
 
           {boughtAccounts.length === 0 ? (
-            <div className="text-center py-10 bg-red-950/30 rounded-2xl border border-dashed border-amber-500/10">
-              <span className="text-3xl">📦</span>
-              <p className="text-stone-300 font-bold text-sm mt-2">
-                Bạn chưa sở hữu tài khoản game nào.
-              </p>
-              <p className="text-xs text-stone-500 mt-1">
-                Các tài khoản đã mua thành công sẽ được hiển thị thông tin ở đây.
-              </p>
-            </div>
+            <EmptyState
+              title={t("emptyStates.noBoughtTitle")}
+              description={t("emptyStates.noBoughtDesc")}
+              iconType="inbox"
+            />
           ) : (
             <div className="space-y-4">
               <div className="overflow-x-auto rounded-xl">
@@ -273,9 +272,13 @@ export default function UserHistory({
         </div>
 
         {filteredTransactions.length === 0 ? (
-          <div className="text-center py-10 bg-red-950/30 rounded-2xl border border-dashed border-amber-500/10 text-xs sm:text-sm text-stone-500 font-bold">
-            Không tìm thấy sao kê giao dịch nào.
-          </div>
+          <EmptyState
+            title={t("emptyStates.noTxTitle")}
+            description={t("emptyStates.noTxDesc")}
+            iconType="database"
+            actionText={t("emptyStates.viewAll")}
+            onAction={() => handleFilterChange("all")}
+          />
         ) : (
           <div className="space-y-4">
             <div className="overflow-x-auto rounded-xl">

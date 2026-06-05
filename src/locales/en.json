@@ -18,7 +18,8 @@
     "roleAdmin": "Admin",
     "roleMember": "Member",
     "balance": "Balance",
-    "langSwitcher": "Language"
+    "langSwitcher": "Language",
+    "accountSettings": "ACCOUNT SETTINGS"
   },
   "footer": {
     "about": "Leading game account, reroll account, and VIP Dragon Ball Legends distributor in Vietnam. Fully automated 24/7 transactions. Lifetime support and warranty for all purchases.",
@@ -183,7 +184,7 @@
     "powerLevelValue": "PL {{level}}",
     "marketPrice": "Market Price: {{price}}đ",
     "savePercent": "SAVE {{percent}}%",
-    "btnBuyNow": "🚀 BUY THIS ACCOUNT INSTANTLY",
+    "btnBuyNow": "BUY THIS ACCOUNT INSTANTLY",
     "btnSoldOut": "THIS ACCOUNT HAS BEEN SOLD",
     "userBalance": "Your balance: {{balance}}đ",
     "missingBalance": "Missing: {{amount}}đ",
@@ -213,7 +214,19 @@
   },
   "categories": {
     "Tất cả": "All",
-    "DANH MỤC ACC REROL ANDROID": "Rerol Android",
-    "DANH MỤC ACC SIÊU VIP": "Super VIP"
+    "DANH MỤC ACC Android": "Android",
+    "DANH MỤC ACC IOS": "IOS"
+  },
+  "loading": {
+    "default": "Loading data, please wait...",
+    "bootstrap": "Loading shop data..."
+  },
+  "emptyStates": {
+    "noAccountsDesc": "Try entering other keywords or reset filters to search for the best Dragon Ball Legends accounts.",
+    "noBoughtTitle": "You do not own any game accounts yet",
+    "noBoughtDesc": "Accounts purchased successfully will have credentials and transfer codes shown here.",
+    "noTxTitle": "No transaction history found",
+    "noTxDesc": "You have not made any transactions or there are no items matching the selected filters.",
+    "viewAll": "View all"
   }
 }

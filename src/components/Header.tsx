@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import favicon from "../assets/images/favicon.ico";
 import {
   DollarSign,
   CreditCard,
@@ -86,8 +87,8 @@ export default function Header({
         >
           <div className="relative">
             <div className="absolute -inset-1 bg-linear-to-tr from-amber-500 to-yellow-300 rounded-full blur opacity-40 group-hover:opacity-75 transition duration-500"></div>
-            <div className="relative bg-linear-to-tr from-amber-500 to-yellow-400 text-stone-950 rounded-full font-black border-2 border-amber-300/60 flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10">
-              <span className="text-xs sm:text-base tracking-tighter">HG</span>
+            <div className="relative bg-stone-950 rounded-full border-2 border-amber-400 flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 overflow-hidden shadow-lg shadow-amber-500/25">
+              <img src={favicon} alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
             </div>
           </div>
           <div>

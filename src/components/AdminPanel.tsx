@@ -17,6 +17,9 @@ import {
   PieChart,
   TrendingUp,
 } from "lucide-react";
+import EmptyState from "./EmptyState";
+import ConfirmDialog from "./ConfirmDialog";
+import { useToastStore } from "../store/useToastStore";
 
 interface AdminPanelProps {
   accounts: GameAccount[];
@@ -38,11 +41,16 @@ export default function AdminPanel({
   onEditAccount,
 }: AdminPanelProps) {
   // Navigation & tabs states
+  const { addToast } = useToastStore();
   const [activeTab, setActiveTab] = useState<"dashboard" | "transactions" | "accounts">("dashboard");
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [selectedAcc, setSelectedAcc] = useState<GameAccount | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAcc, setEditingAcc] = useState<GameAccount | null>(null);
+
+  // Confirmations
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Pagination states
   const [txPage, setTxPage] = useState(1);
@@ -68,7 +76,7 @@ export default function AdminPanel({
   const [price, setPrice] = useState<number>(90000);
   const [originalPrice, setOriginalPrice] = useState<number>(185000);
   const [category, setCategory] = useState<string>(
-    "DANH MỤC ACC REROL ANDROID",
+    "DANH MỤC ACC Android",
   );
   const [chronoCrystals, setChronoCrystals] = useState<number>(25000);
   const [stars, setStars] = useState<number>(8);
@@ -102,8 +110,9 @@ export default function AdminPanel({
   const handleAddSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!id || !title || !accountUser || !accountPass) {
-      alert(
+      addToast(
         "Vui lòng điền các trường bắt buộc: Mã Acc, Tên Tiêu đề, Tài khoản và Mật khẩu!",
+        "error"
       );
       return;
     }
@@ -182,7 +191,7 @@ export default function AdminPanel({
   const handleEditSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!editId || !editTitle || !editAccountUser || !editAccountPass) {
-      alert("Vui lòng điền các trường bắt buộc!");
+      addToast("Vui lòng điền các trường bắt buộc!", "error");
       return;
     }
 
@@ -244,7 +253,7 @@ export default function AdminPanel({
       tx.username.toLowerCase().includes(q) ||
       tx.description.toLowerCase().includes(q) ||
       tx.type.toLowerCase().includes(q);
-      
+
     // User filter dropdown check
     const matchesUser = txUserFilter === "All" || tx.username === txUserFilter;
 
@@ -468,13 +477,7 @@ export default function AdminPanel({
           <div className="border-t border-amber-500/10 pt-4 text-center">
             <button
               onClick={() => {
-                if (
-                  confirm(
-                    "Vũ Trụ Dragon Ball Legends của bạn sẽ khởi tạo lại? Đồng ý chứ?",
-                  )
-                ) {
-                  onResetShop();
-                }
+                setResetConfirmOpen(true);
               }}
               className="w-full bg-red-800 hover:bg-red-700 text-amber-300 py-2 px-3 rounded-xl font-bold text-[10px] border border-amber-500/15 transition flex items-center justify-center gap-1 mx-auto"
             >
@@ -490,7 +493,7 @@ export default function AdminPanel({
             <div className="space-y-6">
               {/* Charts grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 {/* 1. Monthly Revenue Chart (Column Chart) */}
                 <div className="bg-[#4d0808] p-5 rounded-3xl border border-amber-500/20 shadow-xl space-y-4">
                   <div className="flex items-center justify-between border-b border-amber-500/15 pb-2">
@@ -500,17 +503,17 @@ export default function AdminPanel({
                     </h5>
                     <span className="text-[10px] text-stone-400 font-bold uppercase">Biểu đồ cột</span>
                   </div>
-                  
+
                   <div className="flex justify-center items-center py-2 bg-red-950/20 rounded-2xl border border-amber-500/5">
                     <svg width="100%" height="200" viewBox="0 0 400 200" className="overflow-visible">
                       {/* Grid Lines */}
                       <line x1="40" y1="30" x2="380" y2="30" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.1" />
                       <line x1="40" y1="90" x2="380" y2="90" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" opacity="0.1" />
                       <line x1="40" y1="150" x2="380" y2="150" stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.2" />
-                      
+
                       {/* X & Y Axis */}
                       <line x1="40" y1="30" x2="40" y2="150" stroke="#f59e0b" strokeWidth="1" opacity="0.2" />
-                      
+
                       {/* Render columns */}
                       {sortedMonths.map((m, i) => {
                         const val = monthlyRevenueData[m] || 0;
@@ -520,7 +523,7 @@ export default function AdminPanel({
                         const startX = 80;
                         const x = startX + i * (colWidth + gap);
                         const y = 150 - colHeight;
-                        
+
                         return (
                           <g key={m} className="group cursor-pointer">
                             {/* Bar gradient / hover effect */}
@@ -646,20 +649,20 @@ export default function AdminPanel({
                     <svg width="160" height="160" viewBox="0 0 120 120" className="transform -rotate-90">
                       {/* Background circle */}
                       <circle cx="60" cy="60" r="50" fill="transparent" stroke="#2c0404" strokeWidth="12" />
-                      
+
                       {/* Render Pie segments using dash offset */}
                       {(() => {
                         const r = 50;
                         const circ = 2 * Math.PI * r; // 314.159
-                        
+
                         const pMomo = totalRechargeSum > 0 ? (momoSum / totalRechargeSum) * 100 : 0;
                         const pBank = totalRechargeSum > 0 ? (bankSum / totalRechargeSum) * 100 : 0;
                         const pCard = totalRechargeSum > 0 ? (cardSum / totalRechargeSum) * 100 : 0;
-                        
+
                         const dMomo = (pMomo / 100) * circ;
                         const dBank = (pBank / 100) * circ;
                         const dCard = (pCard / 100) * circ;
-                        
+
                         return (
                           <>
                             {/* Momo segment - Purple */}
@@ -708,7 +711,7 @@ export default function AdminPanel({
                         );
                       })()}
                     </svg>
-                    
+
                     {/* Donut Center Label */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                       <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Tổng nạp</span>
@@ -833,9 +836,18 @@ export default function AdminPanel({
               </div>
 
               {paginatedTxs.length === 0 ? (
-                <div className="text-center py-10 bg-red-950/30 rounded-2xl border border-dashed border-amber-500/10 text-stone-400 text-xs">
-                  Không tìm thấy lịch sử giao dịch nào.
-                </div>
+                <EmptyState
+                  title="Không tìm thấy giao dịch"
+                  description="Không có lịch sử giao dịch nào phù hợp với bộ lọc tìm kiếm hiện tại."
+                  iconType="database"
+                  actionText="Reset bộ lọc"
+                  onAction={() => {
+                    setTxPriceRange("All");
+                    setTxUserFilter("All");
+                    setTxSearch("");
+                    setTxPage(1);
+                  }}
+                />
               ) : (
                 <div className="space-y-4">
                   <div className="overflow-x-auto rounded-xl">
@@ -1014,9 +1026,19 @@ export default function AdminPanel({
               </div>
 
               {paginatedAccs.length === 0 ? (
-                <div className="text-center py-10 bg-red-950/30 rounded-2xl border border-dashed border-amber-500/10 text-stone-400 text-xs">
-                  Không tìm thấy tài khoản nào phù hợp bộ lọc.
-                </div>
+                <EmptyState
+                  title="Không tìm thấy tài khoản"
+                  description="Không tìm thấy tài khoản game nào phù hợp với bộ lọc tìm kiếm hiện tại."
+                  iconType="folder"
+                  actionText="Reset bộ lọc"
+                  onAction={() => {
+                    setAccGameFilter("All");
+                    setAccStatusFilter("All");
+                    setAccPriceRange("All");
+                    setAccSearch("");
+                    setAccPage(1);
+                  }}
+                />
               ) : (
                 <div className="space-y-4">
                   <div className="overflow-x-auto rounded-xl">
@@ -1079,15 +1101,7 @@ export default function AdminPanel({
                               </td>
                               <td className="px-3 py-3 text-center">
                                 <button
-                                  onClick={() => {
-                                    if (
-                                      confirm(
-                                        `Bạn có chắc chắn muốn xóa mã Nick ${acc.id} khỏi cửa hàng không?`,
-                                      )
-                                    ) {
-                                      onDeleteAccount(acc.id);
-                                    }
-                                  }}
+                                  onClick={() => setDeleteConfirmId(acc.id)}
                                   className="p-1.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-400 rounded-lg transition cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1131,8 +1145,14 @@ export default function AdminPanel({
 
       {/* MODAL 1: ADD NEW GAME ACCOUNT */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200">
+        <div
+          onClick={() => setShowAddForm(false)}
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200"
+          >
             <button
               onClick={() => setShowAddForm(false)}
               className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer"
@@ -1167,8 +1187,8 @@ export default function AdminPanel({
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2.5 px-3 focus:outline-none text-amber-300 font-bold"
                   >
-                    <option value="DANH MỤC ACC REROL ANDROID">DANH MỤC ACC REROL ANDROID</option>
-                    <option value="DANH MỤC ACC SIÊU VIP">DANH MỤC ACC SIÊU VIP</option>
+                    <option value="DANH MỤC ACC Android">DANH MỤC ACC Android</option>
+                    <option value="DANH MỤC ACC IOS">DANH MỤC ACC IOS</option>
                     <option value="DANH MỤC ACC CHƯA PHÂN LOẠI">DANH MỤC ACC KHÁC</option>
                   </select>
                 </div>
@@ -1289,7 +1309,7 @@ export default function AdminPanel({
                 type="submit"
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase transition cursor-pointer"
               >
-                ✅ Lên Sàn Đăng Bán Ngay
+                Lên Sàn Đăng Bán Ngay
               </button>
             </form>
           </div>
@@ -1298,8 +1318,14 @@ export default function AdminPanel({
 
       {/* MODAL 2: EDIT GAME ACCOUNT */}
       {editingAcc && (
-        <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200">
+        <div
+          onClick={() => setEditingAcc(null)}
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200"
+          >
             <button
               onClick={() => setEditingAcc(null)}
               className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer"
@@ -1332,8 +1358,8 @@ export default function AdminPanel({
                     onChange={(e) => setEditCategory(e.target.value)}
                     className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2.5 px-3 focus:outline-none text-amber-300 font-bold"
                   >
-                    <option value="DANH MỤC ACC REROL ANDROID">DANH MỤC ACC REROL ANDROID</option>
-                    <option value="DANH MỤC ACC SIÊU VIP">DANH MỤC ACC SIÊU VIP</option>
+                    <option value="DANH MỤC ACC Android">DANH MỤC ACC Android</option>
+                    <option value="DANH MỤC ACC IOS">DANH MỤC ACC IOS</option>
                     <option value="DANH MỤC ACC CHƯA PHÂN LOẠI">DANH MỤC ACC KHÁC</option>
                   </select>
                 </div>
@@ -1472,8 +1498,14 @@ export default function AdminPanel({
 
       {/* MODAL 3: TRANSACTION DETAIL POPUP */}
       {selectedTx && (
-        <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+        <div
+          onClick={() => setSelectedTx(null)}
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative"
+          >
             <button
               onClick={() => setSelectedTx(null)}
               className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer"
@@ -1528,8 +1560,14 @@ export default function AdminPanel({
 
       {/* MODAL 4: GAME ACCOUNT DETAIL POPUP */}
       {selectedAcc && (
-        <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200">
+        <div
+          onClick={() => setSelectedAcc(null)}
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200"
+          >
             <button
               onClick={() => setSelectedAcc(null)}
               className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer"
@@ -1600,6 +1638,35 @@ export default function AdminPanel({
           </div>
         </div>
       )}
+      {/* Confirm Dialog for Resetting Data Shop */}
+      <ConfirmDialog
+        isOpen={resetConfirmOpen}
+        title="RESET DỮ LIỆU CỬA HÀNG"
+        message="Hành động này sẽ xóa toàn bộ lịch sử giao dịch, khôi phục danh sách tài khoản mặc định và đặt lại số dư người dùng. Bạn có chắc chắn muốn thực hiện không?"
+        confirmText="Xác nhận Reset"
+        cancelText="Hủy bỏ"
+        onConfirm={() => {
+          onResetShop();
+          setResetConfirmOpen(false);
+        }}
+        onCancel={() => setResetConfirmOpen(false)}
+      />
+
+      {/* Confirm Dialog for Deleting Account */}
+      <ConfirmDialog
+        isOpen={deleteConfirmId !== null}
+        title="XÓA TÀI KHOẢN"
+        message={`Bạn có chắc chắn muốn xóa mã Nick ${deleteConfirmId} khỏi cửa hàng không?`}
+        confirmText="Xóa tài khoản"
+        cancelText="Hủy bỏ"
+        onConfirm={() => {
+          if (deleteConfirmId) {
+            onDeleteAccount(deleteConfirmId);
+            setDeleteConfirmId(null);
+          }
+        }}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
     </div>
   );
 }

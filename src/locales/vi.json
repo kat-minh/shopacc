@@ -18,7 +18,8 @@
     "roleAdmin": "Quản trị viên",
     "roleMember": "Hội viên",
     "balance": "Số dư",
-    "langSwitcher": "Ngôn ngữ"
+    "langSwitcher": "Ngôn ngữ",
+    "accountSettings": "THÔNG TIN TÀI KHOẢN"
   },
   "footer": {
     "about": "Hệ thống phân phối nick game, acc Reroll, VIP Dragon Ball Legends hàng đầu Việt Nam. Tự động giao dịch bảo mật, cấp tốc 24/7. Hỗ trợ khôi phục, bảo hành trọn đời mọi đơn hàng.",
@@ -213,7 +214,19 @@
   },
   "categories": {
     "Tất cả": "Tất cả",
-    "DANH MỤC ACC REROL ANDROID": "Rerol Android",
-    "DANH MỤC ACC SIÊU VIP": "Siêu VIP"
+    "DANH MỤC ACC Android": "Android",
+    "DANH MỤC ACC IOS": "IOS"
+  },
+  "loading": {
+    "default": "Đang tải dữ liệu, vui lòng chờ...",
+    "bootstrap": "Đang tải dữ liệu cửa hàng..."
+  },
+  "emptyStates": {
+    "noAccountsDesc": "Hãy thử nhập từ khóa khác hoặc thiết lập lại bộ lọc để tìm kiếm các tài khoản Dragon Ball Legends tốt nhất.",
+    "noBoughtTitle": "Bạn chưa sở hữu tài khoản game nào",
+    "noBoughtDesc": "Các tài khoản đã mua thành công sẽ được hiển thị thông tin đăng nhập và mã chuyển nhượng ở đây.",
+    "noTxTitle": "Không tìm thấy lịch sử giao dịch",
+    "noTxDesc": "Bạn chưa phát sinh giao dịch nào hoặc không có giao dịch nào khớp với bộ lọc đã chọn.",
+    "viewAll": "Xem tất cả"
   }
 }

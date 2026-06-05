@@ -1,5 +1,6 @@
 import { useState, FormEvent, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useToastStore } from "../store/useToastStore";
 import { CARD_PROVIDERS, CARD_VALUES } from "../data";
 import {
   DollarSign,
@@ -30,6 +31,7 @@ export default function RechargeSection({
   setActiveTab,
 }: RechargeSectionProps) {
   const { t } = useTranslation();
+  const { addToast } = useToastStore();
   // Card formulation states
   const [selectedProvider, setSelectedProvider] = useState<string>("VIETTEL");
   const [selectedAmount, setSelectedAmount] = useState<number>(50000);
@@ -319,7 +321,7 @@ export default function RechargeSection({
 
               <button
                 onClick={() => {
-                  alert(t("recharge.confirmSuccess"));
+                  addToast(t("recharge.confirmSuccess"), "success");
                 }}
                 className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-black py-2.5 px-6 rounded-lg text-sm uppercase transition active:scale-95 duration-150"
               >

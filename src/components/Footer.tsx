@@ -6,7 +6,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#1a0202] border-t-4 border-amber-600/60 mt-20 text-stone-300 pb-12 pt-12">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-        
+
         {/* About column */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -100,7 +100,6 @@ export default function Footer() {
 
       <div className="max-w-7xl mx-auto px-4 mt-10 pt-6 border-t border-amber-950/80 text-center text-xs text-stone-500">
         <p>{t("footer.footerRights")}</p>
-        <p className="mt-1 text-stone-600 font-mono">Powered by Google AI Studio React Framework with Antigravity VM Engine.</p>
       </div>
     </footer>
   );

@@ -18,7 +18,8 @@
     "roleAdmin": "Administrador",
     "roleMember": "Miembro",
     "balance": "Saldo",
-    "langSwitcher": "Idioma"
+    "langSwitcher": "Idioma",
+    "accountSettings": "CONFIGURACIÓN DE LA CUENTA"
   },
   "footer": {
     "about": "Distribuidor líder de cuentas de juego, cuentas Reroll y VIP Dragon Ball Legends en Vietnam. Transacciones automatizadas 24/7. Soporte y garantía de por vida en todas las compras.",
@@ -213,7 +214,19 @@
   },
   "categories": {
     "Tất cả": "Todo",
-    "DANH MỤC ACC REROL ANDROID": "Rerol Android",
-    "DANH MỤC ACC SIÊU VIP": "Súper VIP"
+    "DANH MỤC ACC Android": "Android",
+    "DANH MỤC ACC IOS": "IOS"
+  },
+  "loading": {
+    "default": "Cargando datos, por favor espere...",
+    "bootstrap": "Cargando datos de la tienda..."
+  },
+  "emptyStates": {
+    "noAccountsDesc": "Intente ingresar otras palabras clave o restablecer los filtros para buscar las mejores cuentas de Dragon Ball Legends.",
+    "noBoughtTitle": "Aún no posees ninguna cuenta de juego",
+    "noBoughtDesc": "Las cuentas compradas con éxito mostrarán sus credenciales y códigos de transferencia aquí.",
+    "noTxTitle": "No se encontró historial de transacciones",
+    "noTxDesc": "No has realizado ninguna transacción o no hay elementos que coincidan con los filtros seleccionados.",
+    "viewAll": "Ver todo"
   }
 }

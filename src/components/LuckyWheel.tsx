@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useToastStore } from "../store/useToastStore";
 import { LuckyWheelGame, LuckyWheelPrize } from "../data";
 import {
   Star,
@@ -30,6 +31,7 @@ export default function LuckyWheel({
   setIsSpinning,
 }: LuckyWheelProps) {
   const { t } = useTranslation();
+  const { addToast } = useToastStore();
   const [activeWheel, setActiveWheel] = useState<LuckyWheelGame | null>(null);
   const [spinRotation, setSpinRotation] = useState<number>(0);
   const [spinRewardResult, setSpinRewardResult] =
@@ -57,11 +59,12 @@ export default function LuckyWheel({
     if (isSpinning || !currentWheel) return;
 
     if (userBalance < currentWheel.price) {
-      alert(
+      addToast(
         t("luckyWheel.errBalance", {
           price: currentWheel.price.toLocaleString(),
           balance: userBalance.toLocaleString(),
-        })
+        }),
+        "error"
       );
       document
         .getElementById("recharge-anchor")
@@ -292,8 +295,17 @@ export default function LuckyWheel({
 
       {/* POPUP REWARD NOTICE MODAL */}
       {showRewardModal && spinRewardResult && (
-        <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#4d0808] max-w-sm w-full p-6 h-auto rounded-3xl border-2 border-amber-400/80 text-center space-y-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div 
+          onClick={() => {
+            setShowRewardModal(false);
+            setSpinRewardResult(null);
+          }}
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#4d0808] max-w-sm w-full p-6 h-auto rounded-3xl border-2 border-amber-400/80 text-center space-y-5 shadow-2xl relative animate-in fade-in zoom-in duration-200"
+          >
             <div className="inline-flex p-3 bg-red-950 rounded-full text-amber-300 border border-amber-400 animate-pulse">
               <Sparkles className="w-10 h-10" />
             </div>
