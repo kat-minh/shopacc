@@ -132,7 +132,12 @@ export default function App() {
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
 
   // Banner Intro Animation states
-  const [showBannerIntro, setShowBannerIntro] = useState(false);
+  const [showBannerIntro, setShowBannerIntro] = useState(() => {
+    if (typeof window !== "undefined") {
+      return pathToView(window.location.pathname) === "home";
+    }
+    return true;
+  });
   const [bannerIntroShrink, setBannerIntroShrink] = useState(false);
   const [bannerRect, setBannerRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
@@ -250,7 +255,6 @@ export default function App() {
             width: rect.width,
             height: rect.height,
           });
-          setShowBannerIntro(true);
           setBannerIntroShrink(false);
 
           // After 1 second, start shrinking
@@ -268,9 +272,11 @@ export default function App() {
             clearTimeout(endTimer);
           };
         }
-      }, 150);
+      }, 50);
 
       return () => clearTimeout(timer);
+    } else if (isBootstrapped) {
+      setShowBannerIntro(false);
     }
   }, [activeView, isBootstrapped]);
 
@@ -1314,15 +1320,15 @@ export default function App() {
         }}
       />
       {/* FULL SCREEN BANNER INTRO OVERLAY */}
-      {showBannerIntro && bannerRect && (
+      {showBannerIntro && (
         <div
           className="fixed z-[100] overflow-hidden pointer-events-none transition-all"
           style={{
             backgroundColor: bannerIntroShrink ? "transparent" : "#1c0202",
-            top: bannerIntroShrink ? bannerRect.top - window.scrollY : 0,
-            left: bannerIntroShrink ? bannerRect.left - window.scrollX : 0,
-            width: bannerIntroShrink ? bannerRect.width : "100vw",
-            height: bannerIntroShrink ? bannerRect.height : "100vh",
+            top: bannerIntroShrink && bannerRect ? bannerRect.top - window.scrollY : 0,
+            left: bannerIntroShrink && bannerRect ? bannerRect.left - window.scrollX : 0,
+            width: bannerIntroShrink && bannerRect ? bannerRect.width : "100vw",
+            height: bannerIntroShrink && bannerRect ? bannerRect.height : "100vh",
             transition: "all 0.55s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.55s ease",
           }}
         >
@@ -1332,7 +1338,7 @@ export default function App() {
             className="w-full h-full transition-all duration-550"
             style={{
               objectFit: "contain",
-              borderRadius: bannerIntroShrink ? "1.5rem" : "0px",
+              borderRadius: bannerIntroShrink && bannerRect ? "1.5rem" : "0px",
             }}
           />
         </div>
