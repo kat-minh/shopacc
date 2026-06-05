@@ -113,7 +113,8 @@
     "discount": "DTO",
     "viewDetails": "DETALLES ACC",
     "buyNow": "COMPRAR YA",
-    "outOfStock": "SIN STOCK"
+    "outOfStock": "SIN STOCK",
+    "stockCount": "Stock: {{count}}"
   },
   "recharge": {
     "tabCard": "Cargar Tarjeta",
@@ -192,7 +193,10 @@
     "warrantyBoxTitle": "GARANTÍA DE SEGURIDAD EN TRANSACCIONES DE HAINAGAMING.COM",
     "warrantyBoxDesc": "Esta cuenta es distribuida exclusivamente por Hai Na. Al presionar 'COMPRAR YA', las credenciales de cuenta, código de transferencia y recuperación de Gmail se enviarán a su historial. ¡Totalmente seguro!",
     "deliveryMechanism": "Tipo de entrega",
-    "deliveryAuto": "⚡ ENTREGA AUTOMÁTICA"
+    "deliveryAuto": "⚡ ENTREGA AUTOMÁTICA",
+    "remainingStock": "Queadn: {{count}} artículos",
+    "buyQuantity": "Cantidad a comprar:",
+    "items": "artículos"
   },
   "app": {
     "tickerNews": "¡La tienda de cuentas de Dragon Ball Legends hainagaming.com está regalando códigos de regalo por nuevo servidor! Las recargas vía Momo / ATM tienen +10% de valor."
@@ -228,5 +232,12 @@
     "noTxTitle": "No se encontró historial de transacciones",
     "noTxDesc": "No has realizado ninguna transacción o no hay elementos que coincidan con los filtros seleccionados.",
     "viewAll": "Ver todo"
+  },
+  "checkout": {
+    "titleConfirm": "Confirmar compra de cuenta",
+    "msgConfirm": "¿Está seguro de que desea comprar la cuenta {{id}}? El monto se deducirá directamente de su saldo.",
+    "totalPayment": "Pago total:",
+    "cancel": "Cancelar",
+    "confirmBuy": "Aceptar compra"
   }
 }

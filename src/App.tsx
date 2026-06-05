@@ -52,6 +52,8 @@ import {
   Inbox,
   Smartphone,
   Zap,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 
 const viewToPath = (view: AppView, accountId?: string | null) => {
@@ -112,6 +114,7 @@ export default function App() {
   } = useAuthStore();
 
   const [accounts, setAccounts] = useState<GameAccount[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [boughtAccounts, setBoughtAccounts] = useState<GameAccount[]>([]);
 
@@ -127,6 +130,7 @@ export default function App() {
   // Confirmation dialog states
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pendingAccountToBuy, setPendingAccountToBuy] = useState<GameAccount | null>(null);
+  const [pendingQtyToBuy, setPendingQtyToBuy] = useState<number>(1);
 
   // Gacha spin anim state proxies
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
@@ -165,6 +169,9 @@ export default function App() {
   const [atmAccountOwner, setAtmAccountOwner] = useState<string>("DOAN KHAC Y");
   const [momoPhone, setMomoPhone] = useState<string>("0399881122");
   const [momoAccountOwner, setMomoAccountOwner] = useState<string>("DOAN KHAC Y");
+  const [footerPhone, setFooterPhone] = useState<string>("0399.88.11.22");
+  const [footerZalo, setFooterZalo] = useState<string>("https://zalo.me/17506391");
+  const [footerFacebook, setFooterFacebook] = useState<string>("https://facebook.com/hainagaming");
 
   // Load and bootstrap initial state from local storage securely
   useEffect(() => {
@@ -185,6 +192,10 @@ export default function App() {
             acc.category = acc.id.includes("VIP02") ? "DANH MỤC ACC IOS" : "DANH MỤC ACC Android";
             migrated = true;
           }
+          if (acc.quantity === undefined) {
+            acc.quantity = acc.id.includes("VIP") ? 1 : 15;
+            migrated = true;
+          }
           return acc;
         });
         setAccounts(parsed);
@@ -192,12 +203,30 @@ export default function App() {
           localStorage.setItem("haina_accounts", JSON.stringify(parsed));
         }
       } catch (e) {
-        setAccounts(INITIAL_ACCOUNTS);
-        localStorage.setItem("haina_accounts", JSON.stringify(INITIAL_ACCOUNTS));
+        const initialWithQty = INITIAL_ACCOUNTS.map(acc => ({
+          ...acc,
+          quantity: acc.quantity ?? (acc.id.includes("VIP") ? 1 : 15)
+        }));
+        setAccounts(initialWithQty);
+        localStorage.setItem("haina_accounts", JSON.stringify(initialWithQty));
       }
     } else {
-      setAccounts(INITIAL_ACCOUNTS);
-      localStorage.setItem("haina_accounts", JSON.stringify(INITIAL_ACCOUNTS));
+      const initialWithQty = INITIAL_ACCOUNTS.map(acc => ({
+        ...acc,
+        quantity: acc.quantity ?? (acc.id.includes("VIP") ? 1 : 15)
+      }));
+      setAccounts(initialWithQty);
+      localStorage.setItem("haina_accounts", JSON.stringify(initialWithQty));
+    }
+
+    // Categories
+    const savedCategories = localStorage.getItem("haina_categories");
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    } else {
+      const initialCats = ["DANH MỤC ACC Android", "DANH MỤC ACC IOS"];
+      setCategories(initialCats);
+      localStorage.setItem("haina_categories", JSON.stringify(initialCats));
     }
 
     // Transactions log
@@ -234,6 +263,15 @@ export default function App() {
 
     const savedMomoAccountOwner = localStorage.getItem("haina_momo_owner");
     if (savedMomoAccountOwner) setMomoAccountOwner(savedMomoAccountOwner);
+
+    const savedPhone = localStorage.getItem("haina_footer_phone");
+    if (savedPhone) setFooterPhone(savedPhone);
+
+    const savedZalo = localStorage.getItem("haina_footer_zalo");
+    if (savedZalo) setFooterZalo(savedZalo);
+
+    const savedFb = localStorage.getItem("haina_footer_fb");
+    if (savedFb) setFooterFacebook(savedFb);
 
     setIsBootstrapped(true);
   }, []);
@@ -416,7 +454,7 @@ export default function App() {
   };
 
   // Product Purchase logic
-  const handleBuyAccount = (account: GameAccount) => {
+  const handleBuyAccount = (account: GameAccount, quantity: number = 1) => {
     if (currentUser.username === "Khách") {
       addToast("Vui lòng đăng nhập tài khoản trước khi thực hiện giao dịch!", "error");
       setActiveView("login");
@@ -424,37 +462,46 @@ export default function App() {
       return;
     }
 
-    if (account.status === "Sold") {
-      addToast("Tài khoản này đã bán! Vui lòng lựa chọn mã nick Dragon Ball Legends khác.", "error");
+    if (account.status === "Sold" || (account.quantity !== undefined && account.quantity <= 0)) {
+      addToast("Tài khoản này đã hết hàng! Vui lòng lựa chọn mã nick Dragon Ball Legends khác.", "error");
       return;
     }
 
-    if (currentUser.balance < account.price) {
-      addToast(`Số dư ví của bạn không đủ! Thiếu ${(account.price - currentUser.balance).toLocaleString("vi-VN")}đ để mua tài khoản này.`, "error");
+    const totalCost = account.price * quantity;
+    if (currentUser.balance < totalCost) {
+      addToast(`Số dư ví của bạn không đủ! Thiếu ${(totalCost - currentUser.balance).toLocaleString("vi-VN")}đ để mua tài khoản này.`, "error");
       setActiveView("recharge");
       navigate("/recharge");
       return;
     }
 
     setPendingAccountToBuy(account);
+    setPendingQtyToBuy(quantity);
     setIsConfirmOpen(true);
   };
 
   const executeBuyAccount = () => {
     if (!pendingAccountToBuy) return;
     const account = pendingAccountToBuy;
+    const quantityToBuy = pendingQtyToBuy;
+    const totalCost = account.price * quantityToBuy;
 
     // Process payment
     const updatedUser = {
       ...currentUser,
-      balance: currentUser.balance - account.price,
+      balance: currentUser.balance - totalCost,
     };
     syncUser(updatedUser, isAdmin);
 
     // Update account inventory state
     const updatedAccounts = accounts.map((acc) => {
       if (acc.id === account.id) {
-        return { ...acc, status: "Sold" as const };
+        const newQty = Math.max(0, (acc.quantity ?? 1) - quantityToBuy);
+        return {
+          ...acc,
+          quantity: newQty,
+          status: newQty <= 0 ? ("Sold" as const) : ("Available" as const),
+        };
       }
       return acc;
     });
@@ -466,8 +513,8 @@ export default function App() {
       id: "BUY-" + account.id + "-" + Date.now().toString().slice(-4),
       type: "buy_account",
       username: currentUser.username,
-      amount: account.price,
-      description: `Mua Tài Khoản mã số ${account.id} - ${account.title.slice(0, 30)}...`,
+      amount: totalCost,
+      description: `Mua ${quantityToBuy}x Tài Khoản mã số ${account.id} - ${account.title.slice(0, 30)}...`,
       status: "Success",
       time:
         new Date().toLocaleTimeString("vi-VN") +
@@ -479,17 +526,22 @@ export default function App() {
     localStorage.setItem("haina_transactions", JSON.stringify(updatedTxs));
 
     // Append to bought accounts
-    const updatedBought = [account, ...boughtAccounts];
+    const boughtRecord: GameAccount = {
+      ...account,
+      quantity: quantityToBuy,
+    };
+    const updatedBought = [boughtRecord, ...boughtAccounts];
     setBoughtAccounts(updatedBought);
     localStorage.setItem(
       "haina_bought_accounts",
       JSON.stringify(updatedBought),
     );
 
-    addToast(`Mua thành công tài khoản mã số ${account.id}!`, "success");
-    setCheckoutReceipt(account);
+    addToast(`Mua thành công ${quantityToBuy}x tài khoản mã số ${account.id}!`, "success");
+    setCheckoutReceipt(boughtRecord);
     setIsConfirmOpen(false);
     setPendingAccountToBuy(null);
+    setPendingQtyToBuy(1);
   };
 
   // Lucky Wheel Prize handler callback
@@ -550,10 +602,68 @@ export default function App() {
     localStorage.setItem("haina_accounts", JSON.stringify(updated));
   };
 
+  const handleAddCategory = (newCat: string) => {
+    const trimmed = newCat.trim();
+    if (!trimmed || categories.includes(trimmed)) return;
+    const updated = [...categories, trimmed];
+    setCategories(updated);
+    localStorage.setItem("haina_categories", JSON.stringify(updated));
+    addToast(`Đã thêm danh mục "${trimmed}" thành công!`, "success");
+  };
+
+  const handleEditCategory = (oldCat: string, newCat: string) => {
+    const trimmedOld = oldCat.trim();
+    const trimmedNew = newCat.trim();
+    if (!trimmedNew || trimmedOld === trimmedNew) return;
+    
+    const updatedCats = categories.map(c => c === trimmedOld ? trimmedNew : c);
+    setCategories(updatedCats);
+    localStorage.setItem("haina_categories", JSON.stringify(updatedCats));
+
+    const updatedAccounts = accounts.map(acc => {
+      if (acc.category === trimmedOld) {
+        return { ...acc, category: trimmedNew };
+      }
+      return acc;
+    });
+    setAccounts(updatedAccounts);
+    localStorage.setItem("haina_accounts", JSON.stringify(updatedAccounts));
+
+    addToast(`Đã đổi tên danh mục thành "${trimmedNew}"!`, "success");
+  };
+
+  const handleDeleteCategory = (catToDelete: string) => {
+    const trimmed = catToDelete.trim();
+    const updated = categories.filter(c => c !== trimmed);
+    setCategories(updated);
+    localStorage.setItem("haina_categories", JSON.stringify(updated));
+
+    const fallbackCategory = updated[0] || "DANH MỤC ACC Android";
+    const updatedAccounts = accounts.map(acc => {
+      if (acc.category === trimmed) {
+        return { ...acc, category: fallbackCategory };
+      }
+      return acc;
+    });
+    setAccounts(updatedAccounts);
+    localStorage.setItem("haina_accounts", JSON.stringify(updatedAccounts));
+
+    addToast(`Đã xóa danh mục "${trimmed}" thành công!`, "success");
+  };
+
   // Web content updates
   const handleUpdateTickerNews = (text: string) => {
     setTickerNews(text);
     localStorage.setItem("haina_ticker_news", text);
+  };
+
+  const handleUpdateFooterLinks = (links: { phone: string; zalo: string; facebook: string }) => {
+    setFooterPhone(links.phone);
+    setFooterZalo(links.zalo);
+    setFooterFacebook(links.facebook);
+    localStorage.setItem("haina_footer_phone", links.phone);
+    localStorage.setItem("haina_footer_zalo", links.zalo);
+    localStorage.setItem("haina_footer_fb", links.facebook);
   };
 
   const handleUpdateBilling = (billing: {
@@ -589,6 +699,9 @@ export default function App() {
     localStorage.removeItem("haina_atm_owner");
     localStorage.removeItem("haina_momo_phone");
     localStorage.removeItem("haina_momo_owner");
+    localStorage.removeItem("haina_footer_phone");
+    localStorage.removeItem("haina_footer_zalo");
+    localStorage.removeItem("haina_footer_fb");
 
     setAccounts(INITIAL_ACCOUNTS);
     setTransactions([]);
@@ -599,6 +712,9 @@ export default function App() {
     setAtmAccountOwner("DOAN KHAC Y");
     setMomoPhone("0399881122");
     setMomoAccountOwner("DOAN KHAC Y");
+    setFooterPhone("0399.88.11.22");
+    setFooterZalo("https://zalo.me/17506391");
+    setFooterFacebook("https://facebook.com/hainagaming");
 
     const defaultUser = { username: "hoang_gamer99", balance: 500000 };
     syncUser(defaultUser, false);
@@ -631,8 +747,7 @@ export default function App() {
 
   const categoriesList = [
     "Tất cả",
-    "DANH MỤC ACC Android",
-    "DANH MỤC ACC IOS",
+    ...categories,
   ];
 
   if (!isBootstrapped) {
@@ -705,10 +820,10 @@ export default function App() {
 
       {/* FLASH PROMOTIONAL TICKER NEWS BANNER */}
       {activeView !== "admin" && (
-        <div className="bg-linear-to-r from-amber-500 via-yellow-400 to-amber-500 text-red-950 font-black text-xs py-2 px-4 shadow text-center flex items-center justify-center gap-2 overflow-hidden">
-          <p className="uppercase tracking-wider truncate">
+        <div className="bg-linear-to-r from-amber-500 via-yellow-400 to-amber-500 text-red-950 font-black text-xs py-2 shadow overflow-hidden relative w-full">
+          <div className="animate-marquee-text whitespace-nowrap uppercase tracking-wider">
             {tickerNews}
-          </p>
+          </div>
         </div>
       )}
 
@@ -858,6 +973,14 @@ export default function App() {
             momoPhone={momoPhone}
             momoAccountOwner={momoAccountOwner}
             onUpdateBilling={handleUpdateBilling}
+            categories={categories}
+            onAddCategory={handleAddCategory}
+            onEditCategory={handleEditCategory}
+            onDeleteCategory={handleDeleteCategory}
+            footerPhone={footerPhone}
+            footerZalo={footerZalo}
+            footerFacebook={footerFacebook}
+            onUpdateFooterLinks={handleUpdateFooterLinks}
           />
         )}
 
@@ -1085,7 +1208,22 @@ export default function App() {
 
           {/* CATALOG LISTINGS SECTION */}
           <div className="space-y-6" id="cua-hang">
-
+            {/* Category Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-amber-500/10">
+              {categoriesList.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`py-2 px-4.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer ${
+                    selectedCategory === cat
+                      ? "bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/20"
+                      : "bg-stone-900/40 text-stone-300 border border-amber-500/10 hover:bg-stone-900/80 hover:text-amber-400"
+                  }`}
+                >
+                  {t("categories." + cat, cat)}
+                </button>
+              ))}
+            </div>
 
             {/* Grid Products Cards divided by categories */}
             {filteredAccounts.length === 0 ? (
@@ -1105,7 +1243,6 @@ export default function App() {
                   .filter((cat) => cat !== "Tất cả" && (selectedCategory === "Tất cả" || selectedCategory === cat))
                   .map((cat) => {
                     const accountsInCat = filteredAccounts.filter((acc) => acc.category === cat);
-                    if (accountsInCat.length === 0) return null;
 
                     return (
                       <div key={cat} className="space-y-6">
@@ -1113,9 +1250,9 @@ export default function App() {
                         <div className="flex items-center justify-between border-b-2 border-amber-500/20 pb-3">
                           <div className="flex items-center gap-2.5">
                             <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-400">
-                              {cat.includes("ANDROID") ? (
+                              {cat.includes("ANDROID") || cat.includes("Android") ? (
                                 <Smartphone className="w-5 h-5 text-amber-400" />
-                              ) : cat.includes("IOS") ? (
+                              ) : cat.includes("IOS") || cat.includes("iOS") ? (
                                 <svg className="w-5 h-5 text-amber-400 fill-current" viewBox="0 0 24 24">
                                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.7-1.13 1.84-.99 2.94.1.08 2.16-.52 2.82-1.33z" />
                                 </svg>
@@ -1132,22 +1269,28 @@ export default function App() {
                           </span>
                         </div>
 
-                        {/* Accounts Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                          {accountsInCat.map((acc) => (
-                            <ProductCard
-                              key={acc.id}
-                              account={acc}
-                              onSelect={(account) => {
-                                setSelectedAccount(account);
-                                setActiveView("product-detail");
-                                navigate(`/product/${account.id}`);
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                              }}
-                              onBuy={handleBuyAccount}
-                            />
-                          ))}
-                        </div>
+                        {accountsInCat.length === 0 ? (
+                          <div className="text-center py-8 bg-[#2a0404]/40 rounded-2xl border border-dashed border-amber-500/15 text-stone-400 text-xs font-bold">
+                            Chưa có tài khoản nào thuộc danh mục này.
+                          </div>
+                        ) : (
+                          /* Accounts Grid */
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {accountsInCat.map((acc) => (
+                              <ProductCard
+                                key={acc.id}
+                                account={acc}
+                                onSelect={(account) => {
+                                  setSelectedAccount(account);
+                                  setActiveView("product-detail");
+                                  navigate(`/product/${account.id}`);
+                                  window.scrollTo({ top: 0, behavior: "smooth" });
+                                }}
+                                onBuy={handleBuyAccount}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1162,7 +1305,13 @@ export default function App() {
       </main>
 
       {/* FOOTER SECTION */}
-      {activeView !== "admin" && <Footer />}
+      {activeView !== "admin" && (
+        <Footer
+          phone={footerPhone}
+          zalo={footerZalo}
+          facebook={footerFacebook}
+        />
+      )}
 
       {/* SUCCESS CHECKOUT INVOICE RECEIPT MODAL */}
       {checkoutReceipt && (
@@ -1207,6 +1356,7 @@ export default function App() {
                   <p className="text-[10px] text-amber-400 font-extrabold">
                     MÃ ACC: {checkoutReceipt.id} | Giá:{" "}
                     {checkoutReceipt.price.toLocaleString()}đ
+                    {checkoutReceipt.quantity && checkoutReceipt.quantity > 1 && ` | Số lượng: ${checkoutReceipt.quantity}`}
                   </p>
                 </div>
               </div>
@@ -1339,7 +1489,7 @@ export default function App() {
         <div className="fixed bottom-6 right-6 flex flex-col gap-3.5 z-40 select-none">
           {/* Zalo Button */}
           <a
-            href="https://zalo.me/17506391"
+            href={footerZalo}
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 rounded-full bg-[#0068ff] hover:bg-[#005ad9] flex items-center justify-center text-white shadow-lg shadow-blue-500/30 hover:scale-110 hover:rotate-6 transition duration-300 relative group animate-pulse cursor-pointer"
@@ -1353,7 +1503,7 @@ export default function App() {
 
           {/* Messenger Button */}
           <a
-            href="https://m.me/hainagaming"
+            href={footerFacebook.includes("facebook.com/") ? footerFacebook.replace("facebook.com/", "m.me/") : footerFacebook}
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 rounded-full bg-linear-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/30 hover:scale-110 hover:-rotate-6 transition duration-300 relative group animate-pulse cursor-pointer"
@@ -1372,22 +1522,114 @@ export default function App() {
       <ToastContainer />
 
       {/* Account Purchase Confirmation Alert Dialog */}
-      <ConfirmDialog
-        isOpen={isConfirmOpen}
-        title="Xác nhận mua tài khoản"
-        message={
-          pendingAccountToBuy
-            ? `Bạn có chắc chắn muốn mua tài khoản ${pendingAccountToBuy.id} với giá ${pendingAccountToBuy.price.toLocaleString("vi-VN")}đ không? Số tiền sẽ được trừ trực tiếp từ số dư tài khoản của bạn.`
-            : ""
-        }
-        confirmText="Đồng ý mua"
-        cancelText="Hủy"
-        onConfirm={executeBuyAccount}
-        onCancel={() => {
-          setIsConfirmOpen(false);
-          setPendingAccountToBuy(null);
-        }}
-      />
+      {isConfirmOpen && pendingAccountToBuy && (
+        <div
+          onClick={() => {
+            setIsConfirmOpen(false);
+            setPendingAccountToBuy(null);
+            setPendingQtyToBuy(1);
+          }}
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-[999] overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200 text-stone-200"
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setIsConfirmOpen(false);
+                setPendingAccountToBuy(null);
+                setPendingQtyToBuy(1);
+              }}
+              className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 border-b border-amber-500/20 pb-3">
+              <div className="p-2 bg-amber-500/10 rounded-full border border-amber-500/25">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
+              <h4 className="font-extrabold uppercase text-sm text-stone-100">
+                {t("checkout.titleConfirm")}
+              </h4>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-4">
+              <p className="text-xs sm:text-sm text-stone-300 font-semibold leading-relaxed">
+                {t("checkout.msgConfirm", { id: pendingAccountToBuy.id })}
+              </p>
+
+              {/* Quantity selector inside popup - show only if quantity > 1 */}
+              {pendingAccountToBuy.quantity !== undefined && pendingAccountToBuy.quantity > 1 && (
+                <div className="flex items-center justify-between gap-3 bg-red-950/40 p-2.5 rounded-xl border border-amber-500/10">
+                  <span className="text-xs text-stone-300 font-bold">
+                    {t("productDetail.buyQuantity")}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPendingQtyToBuy(Math.max(1, pendingQtyToBuy - 1))}
+                      className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-amber-500 hover:text-stone-950 text-amber-400 font-bold transition flex items-center justify-center border border-amber-500/20 cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={pendingAccountToBuy.quantity}
+                      value={pendingQtyToBuy}
+                      onChange={(e) => {
+                        const val = Math.min(pendingAccountToBuy.quantity || 1, Math.max(1, parseInt(e.target.value) || 1));
+                        setPendingQtyToBuy(val);
+                      }}
+                      className="w-12 text-center bg-red-950 border border-amber-500/25 rounded-lg py-1 text-xs text-stone-100 focus:outline-none font-bold"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPendingQtyToBuy(Math.min(pendingAccountToBuy.quantity || 1, pendingQtyToBuy + 1))}
+                      className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-amber-500 hover:text-stone-950 text-amber-400 font-bold transition flex items-center justify-center border border-amber-500/20 cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center text-xs font-bold text-stone-300 pt-2 border-t border-amber-500/5">
+                <span>{t("checkout.totalPayment")}</span>
+                <span className="text-amber-400 font-black text-sm">
+                  {(pendingAccountToBuy.price * pendingQtyToBuy).toLocaleString()} đ
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setIsConfirmOpen(false);
+                  setPendingAccountToBuy(null);
+                  setPendingQtyToBuy(1);
+                }}
+                className="flex-1 bg-stone-900 hover:bg-neutral-850 text-stone-300 py-2.5 px-4 rounded-xl border border-amber-500/15 text-xs font-black uppercase transition cursor-pointer"
+              >
+                {t("checkout.cancel")}
+              </button>
+              
+              <button
+                onClick={executeBuyAccount}
+                className="flex-1 bg-amber-500 hover:bg-amber-400 text-red-950 py-2.5 px-4 rounded-xl text-xs font-black uppercase transition cursor-pointer shadow-lg shadow-amber-500/20"
+              >
+                {t("checkout.confirmBuy")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -113,7 +113,8 @@
     "discount": "OFF",
     "viewDetails": "ACC DETAILS",
     "buyNow": "BUY NOW",
-    "outOfStock": "OUT OF STOCK"
+    "outOfStock": "OUT OF STOCK",
+    "stockCount": "Stock: {{count}}"
   },
   "recharge": {
     "tabCard": "Recharge Card",
@@ -192,7 +193,10 @@
     "warrantyBoxTitle": "SECURE TRANSACTION WARRANTY FROM HAINAGAMING.COM",
     "warrantyBoxDesc": "This account is exclusively distributed by Hai Na. Upon clicking 'BUY NOW', account credentials, transfer code, and Gmail password recovery steps will be sent to your history. Fully secure!",
     "deliveryMechanism": "Delivery Type",
-    "deliveryAuto": "⚡ AUTOMATIC DELIVERY"
+    "deliveryAuto": "⚡ AUTOMATIC DELIVERY",
+    "remainingStock": "Remaining: {{count}} items",
+    "buyQuantity": "Quantity to buy:",
+    "items": "items"
   },
   "app": {
     "tickerNews": " hainagaming.com automatic Dragon Ball Legends account shop is giving away new server giftcodes! Recharging via Momo / ATM gets +10% value."
@@ -228,5 +232,12 @@
     "noTxTitle": "No transaction history found",
     "noTxDesc": "You have not made any transactions or there are no items matching the selected filters.",
     "viewAll": "View all"
+  },
+  "checkout": {
+    "titleConfirm": "Confirm Account Purchase",
+    "msgConfirm": "Are you sure you want to purchase account {{id}}? The amount will be deducted directly from your account balance.",
+    "totalPayment": "Total Payment:",
+    "cancel": "Cancel",
+    "confirmBuy": "Agree to buy"
   }
 }

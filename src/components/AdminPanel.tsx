@@ -46,6 +46,14 @@ interface AdminPanelProps {
     momoPhone: string;
     momoAccountOwner: string;
   }) => void;
+  categories: string[];
+  onAddCategory: (cat: string) => void;
+  onEditCategory: (oldCat: string, newCat: string) => void;
+  onDeleteCategory: (cat: string) => void;
+  footerPhone: string;
+  footerZalo: string;
+  footerFacebook: string;
+  onUpdateFooterLinks: (links: { phone: string; zalo: string; facebook: string }) => void;
 }
 
 export default function AdminPanel({
@@ -64,10 +72,18 @@ export default function AdminPanel({
   momoPhone,
   momoAccountOwner,
   onUpdateBilling,
+  categories,
+  onAddCategory,
+  onEditCategory,
+  onDeleteCategory,
+  footerPhone,
+  footerZalo,
+  footerFacebook,
+  onUpdateFooterLinks,
 }: AdminPanelProps) {
   // Navigation & tabs states
   const { addToast } = useToastStore();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "transactions" | "accounts" | "content">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "transactions" | "accounts" | "content" | "categories">("dashboard");
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [selectedAcc, setSelectedAcc] = useState<GameAccount | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -114,6 +130,8 @@ export default function AdminPanel({
   const [accountUser, setAccountUser] = useState<string>("");
   const [accountPass, setAccountPass] = useState<string>("");
   const [transferCode, setTransferCode] = useState<string>("");
+  const [quantity, setQuantity] = useState<number>(15);
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   // Edit account form states
   const [editId, setEditId] = useState("");
@@ -128,9 +146,59 @@ export default function AdminPanel({
   const [editAccountUser, setEditAccountUser] = useState("");
   const [editAccountPass, setEditAccountPass] = useState("");
   const [editTransferCode, setEditTransferCode] = useState("");
+  const [editQuantity, setEditQuantity] = useState<number>(1);
+  const [editImageUrl, setEditImageUrl] = useState<string>("");
   const [editStatus, setEditStatus] = useState<"Available" | "Sold">("Available");
 
-  const [notif, setNotif] = useState<string>("");
+  const [notif, setNotif] = useState<string>(
+    "",
+  );
+
+  // Category CRUD states
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategoryOldName, setEditingCategoryOldName] = useState<string | null>(null);
+  const [editingCategoryNewName, setEditingCategoryNewName] = useState("");
+  const [deleteCategoryConfirm, setDeleteCategoryConfirm] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!category && categories.length > 0) {
+      setCategory(categories[0]);
+    }
+  }, [categories, category]);
+
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) {
+      addToast("Vui lòng nhập tên danh mục!", "error");
+      return;
+    }
+    if (categories.includes(newCategoryName.trim())) {
+      addToast("Danh mục này đã tồn tại!", "error");
+      return;
+    }
+    onAddCategory(newCategoryName.trim());
+    setNewCategoryName("");
+  };
+
+  const startEditCategory = (cat: string) => {
+    setEditingCategoryOldName(cat);
+    setEditingCategoryNewName(cat);
+  };
+
+  const handleEditCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategoryNewName.trim()) {
+      addToast("Tên danh mục không được để trống!", "error");
+      return;
+    }
+    if (categories.includes(editingCategoryNewName.trim()) && editingCategoryNewName.trim() !== editingCategoryOldName) {
+      addToast("Tên danh mục này đã tồn tại!", "error");
+      return;
+    }
+    onEditCategory(editingCategoryOldName!, editingCategoryNewName.trim());
+    setEditingCategoryOldName(null);
+    setEditingCategoryNewName("");
+  };
 
   // Content Sub-tabs
   const [contentSubTab, setContentSubTab] = useState<"home" | "recharge">("home");
@@ -142,6 +210,9 @@ export default function AdminPanel({
   const [localAtmOwner, setLocalAtmOwner] = useState(atmAccountOwner);
   const [localMomoPhone, setLocalMomoPhone] = useState(momoPhone);
   const [localMomoOwner, setLocalMomoOwner] = useState(momoAccountOwner);
+  const [localPhone, setLocalPhone] = useState(footerPhone);
+  const [localZalo, setLocalZalo] = useState(footerZalo);
+  const [localFacebook, setLocalFacebook] = useState(footerFacebook);
 
   // Synchronize local states when props change
   useEffect(() => {
@@ -151,7 +222,10 @@ export default function AdminPanel({
     setLocalAtmOwner(atmAccountOwner);
     setLocalMomoPhone(momoPhone);
     setLocalMomoOwner(momoAccountOwner);
-  }, [tickerNews, atmBank, atmAccountNumber, atmAccountOwner, momoPhone, momoAccountOwner]);
+    setLocalPhone(footerPhone);
+    setLocalZalo(footerZalo);
+    setLocalFacebook(footerFacebook);
+  }, [tickerNews, atmBank, atmAccountNumber, atmAccountOwner, momoPhone, momoAccountOwner, footerPhone, footerZalo, footerFacebook]);
 
   const handleAddSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -179,10 +253,9 @@ export default function AdminPanel({
       title: title.trim(),
       price: price,
       originalPrice: originalPrice,
-      imageUrl:
-        "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
-      avatarUrl:
-        "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
+      imageUrl: imageUrl.trim() || "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+      avatarUrl: imageUrl.trim() || "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
+      quantity: quantity,
       stats: {
         chronoCrystals: chronoCrystals,
         vipCharacters: vipCharactersList,
@@ -212,6 +285,8 @@ export default function AdminPanel({
     setAccountUser("");
     setAccountPass("");
     setTransferCode("");
+    setQuantity(15);
+    setImageUrl("");
     setShowAddForm(false);
   };
 
@@ -221,14 +296,16 @@ export default function AdminPanel({
     setEditPrice(acc.price);
     setEditOriginalPrice(acc.originalPrice);
     setEditCategory(acc.category);
-    setEditChronoCrystals(acc.stats.chronoCrystals);
-    setEditStars(acc.stats.starsCount);
+    setEditChronoCrystals(acc.stats.chronoCrystals || 0);
+    setEditStars(acc.stats.starsCount || 0);
     setEditCharacters(acc.stats.vipCharacters?.join(", ") || "");
     setEditDetails(acc.details?.join(", ") || "");
     setEditAccountUser(acc.credentials.username);
     setEditAccountPass(acc.credentials.pass);
     setEditTransferCode(acc.credentials.transferCode || "");
     setEditStatus(acc.status);
+    setEditQuantity(acc.quantity || 1);
+    setEditImageUrl(acc.imageUrl || "");
 
     setSelectedAcc(null); // Close detail modal if open
     setEditingAcc(acc);
@@ -257,6 +334,9 @@ export default function AdminPanel({
       title: editTitle.trim(),
       price: editPrice,
       originalPrice: editOriginalPrice,
+      imageUrl: editImageUrl.trim() || editingAcc!.imageUrl,
+      avatarUrl: editImageUrl.trim() || editingAcc!.avatarUrl,
+      quantity: editQuantity,
       stats: {
         ...editingAcc!.stats,
         chronoCrystals: editChronoCrystals,
@@ -277,6 +357,120 @@ export default function AdminPanel({
     setNotif(`Đã cập nhật thành công tài khoản mã ${editId}!`);
     setTimeout(() => setNotif(""), 3000);
     setEditingAcc(null);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+
+      try {
+        const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+        if (lines.length < 2) {
+          addToast("File không có dữ liệu hoặc thiếu tiêu đề!", "error");
+          return;
+        }
+
+        const header = lines[0];
+        let sep = ",";
+        if (header.includes("\t")) {
+          sep = "\t";
+        } else if (header.includes(";")) {
+          sep = ";";
+        }
+
+        const headers = header.split(sep).map(h => h.trim().toLowerCase());
+        
+        let importedCount = 0;
+        let duplicateCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(sep).map(val => val.trim().replace(/^["']|["']$/g, ''));
+          if (row.length < 4) continue;
+
+          const getVal = (colNames: string[]) => {
+            const index = headers.findIndex(h => colNames.includes(h));
+            return index !== -1 ? row[index] : "";
+          };
+
+          const rowId = getVal(["id", "ma", "mã", "mã số", "code"]).toUpperCase();
+          const rowTitle = getVal(["title", "tieu de", "tiêu đề", "ten", "tên"]);
+          const rowPrice = Number(getVal(["price", "gia", "giá", "giá bán"])) || 50000;
+          const rowOrigPrice = Number(getVal(["originalprice", "original price", "giá gốc", "gia goc"])) || rowPrice * 2;
+          const rowCategory = getVal(["category", "danh muc", "danh mục"]) || categories[0] || "DANH MỤC ACC Android";
+          const rowUser = getVal(["username", "user", "tai khoan", "tài khoản", "gmail", "login"]);
+          const rowPass = getVal(["password", "pass", "mat khau", "mật khẩu"]);
+          const rowTransfer = getVal(["transfercode", "transfer code", "mã chuyển", "code chuyển"]);
+          const rowCrystals = Number(getVal(["crystals", "gems", "kim cuong", "kim cương", "cc"])) || 0;
+          const rowStars = Number(getVal(["stars", "sao", "rank", "hạng sao"])) || 0;
+          const rowQty = Number(getVal(["quantity", "qty", "so luong", "số lượng"])) || 15;
+          const rowImage = getVal(["imageurl", "image url", "ảnh", "anh", "image", "link anh", "link ảnh"]);
+
+          if (!rowId || !rowTitle || !rowUser || !rowPass) {
+            continue;
+          }
+
+          if (accounts.some(acc => acc.id === rowId)) {
+            duplicateCount++;
+            continue;
+          }
+
+          const parsedCharacters = getVal(["characters", "nhân vật", "vip characters"])
+            .split("|")
+            .map(c => c.trim())
+            .filter(Boolean);
+
+          const parsedDetails = getVal(["details", "mô tả", "detail"])
+            .split("|")
+            .map(d => d.trim())
+            .filter(Boolean);
+
+          const newAcc: GameAccount = {
+            id: rowId,
+            game: "Dragon Ball Legends",
+            category: rowCategory,
+            title: rowTitle,
+            price: rowPrice,
+            originalPrice: rowOrigPrice,
+            imageUrl: rowImage || "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+            avatarUrl: rowImage || "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
+            quantity: rowQty,
+            stats: {
+              chronoCrystals: rowCrystals,
+              vipCharacters: parsedCharacters.length > 0 ? parsedCharacters : ["Reroll Starter"],
+              powerLevel: Math.floor(rowCrystals / 400) + 10,
+              starsCount: rowStars,
+              server: "Global (Android & iOS)",
+            },
+            details: parsedDetails.length > 0 ? parsedDetails : ["Giao dịch tự động siêu tốc", "Bảo hành 1 đổi 1"],
+            status: "Available",
+            credentials: {
+              username: rowUser,
+              pass: rowPass,
+              transferCode: rowTransfer || undefined,
+            }
+          };
+
+          onAddAccount(newAcc);
+          importedCount++;
+        }
+
+        if (importedCount > 0) {
+          addToast(`Import thành công ${importedCount} tài khoản!${duplicateCount > 0 ? ` (Bỏ qua ${duplicateCount} mã trùng)` : ''}`, "success");
+        } else {
+          addToast(`Không thêm được tài khoản nào. Vui lòng kiểm tra lại cấu trúc file!${duplicateCount > 0 ? ` (${duplicateCount} mã bị trùng lặp)` : ''}`, "warning");
+        }
+      } catch (err) {
+        addToast("Lỗi khi đọc file CSV! Đảm bảo định dạng chuẩn.", "error");
+      }
+    };
+
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   // Compute stat metrics
@@ -326,7 +520,7 @@ export default function AdminPanel({
       acc.title.toLowerCase().includes(q) ||
       acc.category.toLowerCase().includes(q);
 
-    const matchesGame = accGameFilter === "All" || acc.game.toLowerCase().includes(accGameFilter.toLowerCase());
+    const matchesCategory = accGameFilter === "All" || acc.category === accGameFilter;
     const matchesStatus = accStatusFilter === "All" || acc.status === accStatusFilter;
 
     // Price range dropdown check
@@ -517,6 +711,16 @@ export default function AdminPanel({
             >
               <Inbox className="w-4 h-4 shrink-0" />
               Quản lý Acc Game
+            </button>
+            <button
+              onClick={() => setActiveTab("categories")}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2.5 transition ${activeTab === "categories"
+                ? "bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20"
+                : "text-stone-300 hover:bg-stone-900/50 hover:text-amber-400"
+                }`}
+            >
+              <Settings className="w-4 h-4 shrink-0" />
+              Quản lý Danh mục
             </button>
             <button
               onClick={() => setActiveTab("content")}
@@ -999,6 +1203,17 @@ export default function AdminPanel({
                   >
                     <Plus className="w-3.5 h-3.5" /> Đăng Acc Mới
                   </button>
+                  <label
+                    className="bg-blue-600 hover:bg-blue-500 text-stone-100 py-1 px-3 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 transition cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Import Excel/CSV
+                    <input
+                      type="file"
+                      accept=".csv,.txt,.tsv"
+                      onChange={handleImportFile}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
 
                 {/* Search accounts query */}
@@ -1020,7 +1235,7 @@ export default function AdminPanel({
               {/* Advanced account filters */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3 bg-red-950/20 rounded-2xl border border-amber-500/10 text-xs">
                 <div>
-                  <label className="block text-[10px] text-stone-400 uppercase font-black mb-1">Loại Game</label>
+                  <label className="block text-[10px] text-stone-400 uppercase font-black mb-1">Danh mục</label>
                   <select
                     value={accGameFilter}
                     onChange={(e) => {
@@ -1029,8 +1244,12 @@ export default function AdminPanel({
                     }}
                     className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-200 font-bold"
                   >
-                    <option value="All">Tất cả Game</option>
-                    <option value="Dragon Ball Legends">Dragon Ball Legends</option>
+                    <option value="All">Tất cả Danh mục</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -1234,7 +1453,12 @@ export default function AdminPanel({
                   onSubmit={(e) => {
                     e.preventDefault();
                     onUpdateTickerNews(localTicker);
-                    addToast("Cập nhật thông báo hệ thống thành công!", "success");
+                    onUpdateFooterLinks({
+                      phone: localPhone,
+                      zalo: localZalo,
+                      facebook: localFacebook,
+                    });
+                    addToast("Cập nhật thông báo và liên hệ footer thành công!", "success");
                   }}
                   className="space-y-4"
                 >
@@ -1255,11 +1479,60 @@ export default function AdminPanel({
                     </p>
                   </div>
 
+                  <div className="bg-[#2c0404]/80 p-5 rounded-2xl border border-amber-500/10 space-y-4 mt-4">
+                    <div className="border-b border-rose-900/40 pb-2">
+                      <h5 className="font-extrabold text-xs uppercase text-amber-300 tracking-wider">
+                        Cấu hình thông tin liên hệ ở Footer & Widgets
+                      </h5>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                          Số điện thoại Hotline *
+                        </label>
+                        <input
+                          type="text"
+                          value={localPhone}
+                          onChange={(e) => setLocalPhone(e.target.value)}
+                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
+                          placeholder="Ví dụ: 0399.88.11.22"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                          Đường dẫn Zalo hỗ trợ *
+                        </label>
+                        <input
+                          type="text"
+                          value={localZalo}
+                          onChange={(e) => setLocalZalo(e.target.value)}
+                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
+                          placeholder="Ví dụ: https://zalo.me/17506391"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                          Đường dẫn Facebook Fanpage *
+                        </label>
+                        <input
+                          type="text"
+                          value={localFacebook}
+                          onChange={(e) => setLocalFacebook(e.target.value)}
+                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
+                          placeholder="Ví dụ: https://facebook.com/hainagaming"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-black py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition duration-150 transform active:scale-95 cursor-pointer shadow-lg"
                   >
-                    Lưu thông báo
+                    Lưu thông tin Home & Footer
                   </button>
                 </form>
               )}
@@ -1388,6 +1661,119 @@ export default function AdminPanel({
               )}
             </div>
           )}
+
+          {/* TAB 4: CATEGORY CRUD MANAGEMENT */}
+          {activeTab === "categories" && (
+            <div className="bg-[#4d0808] p-5 sm:p-6 rounded-3xl border border-amber-500/20 shadow-xl space-y-6 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-amber-500/15">
+                <h4 className="font-extrabold uppercase text-sm text-stone-100 flex items-center gap-1.5">
+                  <Settings className="w-4 h-4 text-amber-400" />
+                  Quản lý Danh Mục Sản Phẩm
+                </h4>
+              </div>
+
+              {/* Add category form */}
+              <form onSubmit={handleAddCategorySubmit} className="bg-red-950/40 p-4 rounded-2xl border border-amber-500/10 space-y-3">
+                <span className="text-[10px] text-stone-400 uppercase font-black tracking-widest block">
+                  Thêm danh mục mới
+                </span>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nhập tên danh mục (ví dụ: DANH MỤC ACC VIP...)"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    className="grow bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-bold"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-black py-2 px-5 rounded-xl text-xs uppercase tracking-wider transition shrink-0 cursor-pointer"
+                  >
+                    Thêm
+                  </button>
+                </div>
+              </form>
+
+              {/* Categories list */}
+              <div className="bg-[#2c0404]/80 p-4 rounded-2xl border border-amber-500/10">
+                <span className="text-[10px] text-stone-400 uppercase font-black tracking-widest block mb-3">
+                  Danh sách danh mục đang có
+                </span>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-amber-500/20 text-[10px] text-stone-400 uppercase font-black">
+                        <th className="py-2.5 px-3">Tên danh mục</th>
+                        <th className="py-2.5 px-3 text-center">Tồn kho Acc</th>
+                        <th className="py-2.5 px-3 text-right">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {categories.map((cat) => {
+                        const count = accounts.filter((a) => a.category === cat).length;
+                        const isEditing = editingCategoryOldName === cat;
+
+                        return (
+                          <tr key={cat} className="border-b border-amber-500/5 hover:bg-red-950/20 transition">
+                            <td className="py-3 px-3 font-extrabold text-stone-100">
+                              {isEditing ? (
+                                <form onSubmit={handleEditCategorySubmit} className="flex gap-2 w-full max-w-sm">
+                                  <input
+                                    type="text"
+                                    value={editingCategoryNewName}
+                                    onChange={(e) => setEditingCategoryNewName(e.target.value)}
+                                    className="grow bg-red-950 border border-amber-500/30 rounded-lg py-1 px-2 text-xs text-stone-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="submit"
+                                    className="bg-emerald-500 hover:bg-emerald-400 text-stone-950 px-2 py-1 rounded text-[10px] font-black uppercase"
+                                  >
+                                    Lưu
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCategoryOldName(null)}
+                                    className="bg-stone-800 hover:bg-stone-700 text-stone-300 px-2 py-1 rounded text-[10px] font-black uppercase"
+                                  >
+                                    Hủy
+                                  </button>
+                                </form>
+                              ) : (
+                                <span>{cat}</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-center font-mono font-bold text-amber-400">
+                              {count} nick
+                            </td>
+                            <td className="py-3 px-3 text-right space-x-2">
+                              {!isEditing && (
+                                <>
+                                  <button
+                                    onClick={() => startEditCategory(cat)}
+                                    className="py-1 px-2.5 bg-stone-900/50 hover:bg-emerald-500 hover:text-stone-950 text-emerald-400 rounded-lg border border-amber-500/20 text-[10px] font-bold uppercase transition inline-block cursor-pointer"
+                                  >
+                                    Sửa
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteCategoryConfirm(cat)}
+                                    className="py-1 px-2.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-400 rounded-lg text-[10px] font-bold uppercase transition inline-block cursor-pointer"
+                                  >
+                                    Xóa
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1435,10 +1821,56 @@ export default function AdminPanel({
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2.5 px-3 focus:outline-none text-amber-300 font-bold"
                   >
-                    <option value="DANH MỤC ACC Android">DANH MỤC ACC Android</option>
-                    <option value="DANH MỤC ACC IOS">DANH MỤC ACC IOS</option>
-                    <option value="DANH MỤC ACC CHƯA PHÂN LOẠI">DANH MỤC ACC KHÁC</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-stone-300 font-bold mb-1">Ảnh sản phẩm (URL hoặc tải file lên)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                  <div className="sm:col-span-8 space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Dán đường dẫn ảnh (URL) hoặc tải ảnh lên bên dưới..."
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 text-xs"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-stone-400">Hoặc</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result) {
+                                setImageUrl(event.target.result as string);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  <div className="sm:col-span-4 flex justify-center">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden border border-amber-500/20 bg-stone-900 flex items-center justify-center relative">
+                      {imageUrl ? (
+                        <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                      ) : (
+                        <span className="text-[9px] text-stone-500 text-center px-2">Chưa có ảnh</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1454,7 +1886,7 @@ export default function AdminPanel({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-stone-300 font-bold mb-1">Giá Bán Thực tế (đ)</label>
                   <input
@@ -1471,6 +1903,16 @@ export default function AdminPanel({
                     value={originalPrice}
                     onChange={(e) => setOriginalPrice(Number(e.target.value))}
                     className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-400 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">Số lượng tồn kho</label>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-emerald-400 font-black"
+                    min={1}
                   />
                 </div>
               </div>
@@ -1582,7 +2024,10 @@ export default function AdminPanel({
             </button>
 
             <div className="flex items-center gap-1.5 border-b border-amber-500/20 pb-2">
-              <svg className="w-5 h-5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <svg className="w-5 h-5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
               <h4 className="font-extrabold uppercase text-sm text-stone-100">
                 Chỉnh sửa tài khoản {editId}
               </h4>
@@ -1606,10 +2051,56 @@ export default function AdminPanel({
                     onChange={(e) => setEditCategory(e.target.value)}
                     className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2.5 px-3 focus:outline-none text-amber-300 font-bold"
                   >
-                    <option value="DANH MỤC ACC Android">DANH MỤC ACC Android</option>
-                    <option value="DANH MỤC ACC IOS">DANH MỤC ACC IOS</option>
-                    <option value="DANH MỤC ACC CHƯA PHÂN LOẠI">DANH MỤC ACC KHÁC</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-stone-300 font-bold mb-1">Ảnh sản phẩm (URL hoặc tải file lên)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                  <div className="sm:col-span-8 space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Dán đường dẫn ảnh (URL) hoặc tải ảnh lên bên dưới..."
+                      value={editImageUrl}
+                      onChange={(e) => setEditImageUrl(e.target.value)}
+                      className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 text-xs"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-stone-400">Hoặc</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result) {
+                                setEditImageUrl(event.target.result as string);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  <div className="sm:col-span-4 flex justify-center">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden border border-amber-500/20 bg-stone-900 flex items-center justify-center relative">
+                      {editImageUrl ? (
+                        <img src={editImageUrl} className="w-full h-full object-cover" alt="Preview" />
+                      ) : (
+                        <span className="text-[9px] text-stone-500 text-center px-2">Chưa có ảnh</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1624,7 +2115,7 @@ export default function AdminPanel({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-stone-300 font-bold mb-1">Giá Bán Thực tế (đ)</label>
                   <input
@@ -1641,6 +2132,16 @@ export default function AdminPanel({
                     value={editOriginalPrice}
                     onChange={(e) => setEditOriginalPrice(Number(e.target.value))}
                     className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-400 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-stone-300 font-bold mb-1">Số lượng tồn kho</label>
+                  <input
+                    type="number"
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(Number(e.target.value))}
+                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-emerald-400 font-black"
+                    min={0}
                   />
                 </div>
               </div>
@@ -1914,6 +2415,22 @@ export default function AdminPanel({
           }
         }}
         onCancel={() => setDeleteConfirmId(null)}
+      />
+
+      {/* Confirm Dialog for Deleting Category */}
+      <ConfirmDialog
+        isOpen={deleteCategoryConfirm !== null}
+        title="XÓA DANH MỤC"
+        message={`Bạn có chắc chắn muốn xóa danh mục "${deleteCategoryConfirm}" không? Tất cả các tài khoản đang thuộc danh mục này sẽ tự động chuyển sang danh mục mặc định khác.`}
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        onConfirm={() => {
+          if (deleteCategoryConfirm) {
+            onDeleteCategory(deleteCategoryConfirm);
+            setDeleteCategoryConfirm(null);
+          }
+        }}
+        onCancel={() => setDeleteCategoryConfirm(null)}
       />
     </div>
   );

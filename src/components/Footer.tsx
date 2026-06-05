@@ -1,7 +1,13 @@
 import { ShieldCheck, HelpCircle, Gamepad2, Info, Facebook, MessageCircle, Phone } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 
-export default function Footer() {
+interface FooterProps {
+  phone: string;
+  zalo: string;
+  facebook: string;
+}
+
+export default function Footer({ phone, zalo, facebook }: FooterProps) {
   const { t } = useTranslation();
   return (
     <footer className="bg-[#1a0202] border-t-4 border-amber-600/60 mt-20 text-stone-300 pb-12 pt-12">
@@ -66,15 +72,15 @@ export default function Footer() {
           <ul className="space-y-2.5 text-xs text-stone-400">
             <li className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{t("footer.hotline")} <strong className="text-amber-400">0399.XXX.XXX</strong></span>
+              <span>{t("footer.hotline")} <strong className="text-amber-400">{phone}</strong></span>
             </li>
             <li className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4 text-sky-400 shrink-0" />
-              <span>{t("footer.zalo")} <strong className="text-amber-400">0399.XXX.XXX</strong></span>
+              <span>{t("footer.zalo")} <strong className="text-amber-400"><a href={zalo} target="_blank" rel="noopener noreferrer" className="hover:underline">{phone}</a></strong></span>
             </li>
             <li className="flex items-center gap-2">
               <Facebook className="w-4 h-4 text-blue-500 shrink-0" />
-              <span>{t("footer.fanpage")} <a href="#" className="underline hover:text-white">Hải Na Gaming Shop</a></span>
+              <span>{t("footer.fanpage")} <a href={facebook} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Hải Na Gaming Shop</a></span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-rose-400">⏱</span>

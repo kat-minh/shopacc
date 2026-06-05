@@ -105,13 +105,18 @@ export default function ProductCard({
         <div className="mt-4 pt-3 border-t border-amber-500/10">
           {/* Prices Row */}
           <div className="flex items-end justify-between mb-3">
-            <div>
+            <div className="flex flex-col items-start">
               <p className="text-[10px] text-stone-400 line-through">
                 {account.originalPrice.toLocaleString("vi-VN")} đ
               </p>
               <p className="text-base font-black text-amber-400">
                 {account.price.toLocaleString("vi-VN")} đ
               </p>
+              {isAvailable && (
+                <span className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                  {t("productCard.stockCount", { count: account.quantity ?? 1 })}
+                </span>
+              )}
             </div>
             {account.originalPrice > account.price ? (
               <span className="text-[10px] bg-red-600 text-white font-black px-1.5 py-0.5 rounded">

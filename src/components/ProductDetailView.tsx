@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { GameAccount } from "../data";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,7 +16,7 @@ interface ProductDetailProps {
   account: GameAccount;
   userBalance: number;
   onBack: () => void;
-  onBuy: (account: GameAccount) => void;
+  onBuy: (account: GameAccount, quantity: number) => void;
 }
 
 export default function ProductDetailView({
@@ -25,7 +26,8 @@ export default function ProductDetailView({
   onBuy,
 }: ProductDetailProps) {
   const { t } = useTranslation();
-  const isAvailable = account.status === "Available";
+  const [qtyToBuy, setQtyToBuy] = useState(1);
+  const isAvailable = account.status === "Available" && (account.quantity === undefined || account.quantity > 0);
 
   return (
     <div className="max-w-4xl mx-auto my-0 space-y-6">
@@ -143,21 +145,67 @@ export default function ProductDetailView({
                   </p>
                 </div>
 
-                <span className="bg-red-600/20 text-red-300 font-black text-xs px-2 py-1 rounded border border-red-500/20">
-                  {t("productDetail.savePercent", {
-                    percent: Math.round(
-                      ((account.originalPrice - account.price) /
-                        account.originalPrice) *
-                        100,
-                    )
-                  })}
-                </span>
+                <div className="text-right">
+                  <span className="bg-red-600/20 text-red-300 font-black text-xs px-2 py-1 rounded border border-red-500/20 block mb-1">
+                    {t("productDetail.savePercent", {
+                      percent: Math.round(
+                        ((account.originalPrice - account.price) /
+                          account.originalPrice) *
+                          100,
+                      )
+                    })}
+                  </span>
+                  <span className="text-stone-300 text-xs font-bold">
+                    {t("productDetail.remainingStock", { count: account.quantity ?? 1 })}
+                  </span>
+                </div>
               </div>
+
+              {/* Quantity Selector - show only if quantity > 1 */}
+              {isAvailable && account.quantity !== undefined && account.quantity > 1 && (
+                <div className="flex items-center justify-between gap-3 mb-4 bg-red-950/40 p-2.5 rounded-xl border border-amber-500/10">
+                  <span className="text-xs text-stone-300 font-bold">{t("productDetail.buyQuantity")}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setQtyToBuy(Math.max(1, qtyToBuy - 1))}
+                      className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-amber-500 hover:text-stone-950 text-amber-400 font-bold transition flex items-center justify-center border border-amber-500/20"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={account.quantity}
+                      value={qtyToBuy}
+                      onChange={(e) => {
+                        const val = Math.min(account.quantity || 1, Math.max(1, parseInt(e.target.value) || 1));
+                        setQtyToBuy(val);
+                      }}
+                      className="w-12 text-center bg-red-950 border border-amber-500/25 rounded-lg py-1 text-xs text-stone-100 focus:outline-none font-bold"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setQtyToBuy(Math.min(account.quantity || 1, qtyToBuy + 1))}
+                      className="w-8 h-8 rounded-lg bg-stone-900 hover:bg-amber-500 hover:text-stone-950 text-amber-400 font-bold transition flex items-center justify-center border border-amber-500/20"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {qtyToBuy > 1 && (
+                <div className="flex justify-between items-center text-xs font-bold text-stone-300 mb-3 px-1">
+                  <span>{t("checkout.totalPayment")} ({qtyToBuy} {t("productDetail.items", "sản phẩm")}):</span>
+                  <span className="text-amber-400 font-black text-sm">{(account.price * qtyToBuy).toLocaleString()} đ</span>
+                </div>
+              )}
 
               <div className="space-y-2">
                 {isAvailable ? (
                   <button
-                    onClick={() => onBuy(account)}
+                    onClick={() => onBuy(account, qtyToBuy)}
                     className="w-full bg-linear-to-r from-amber-400 via-amber-500 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-red-950 font-black text-base py-3 px-4 rounded-xl shadow-lg border-y-2 border-amber-300 active:scale-[0.99] transition flex items-center justify-center gap-2"
                   >
                     {t("productDetail.btnBuyNow")}
@@ -175,9 +223,9 @@ export default function ProductDetailView({
                   <span>
                     {t("productDetail.userBalance", { balance: userBalance.toLocaleString() })}
                   </span>
-                  {userBalance < account.price ? (
+                  {userBalance < account.price * qtyToBuy ? (
                     <span className="text-rose-400 font-bold">
-                      {t("productDetail.missingBalance", { amount: (account.price - userBalance).toLocaleString() })}
+                      {t("productDetail.missingBalance", { amount: (account.price * qtyToBuy - userBalance).toLocaleString() })}
                     </span>
                   ) : (
                     <span className="text-emerald-400 font-bold">

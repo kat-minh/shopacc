@@ -113,7 +113,8 @@
     "discount": "GIẢM",
     "viewDetails": "CHI TIẾT ACC",
     "buyNow": "MUA NGAY",
-    "outOfStock": "HẾT HÀNG"
+    "outOfStock": "HẾT HÀNG",
+    "stockCount": "Tồn kho: {{count}}"
   },
   "recharge": {
     "tabCard": "Nạp Thẻ Cào",
@@ -192,7 +193,10 @@
     "warrantyBoxTitle": "BẢO HÀNH GIAO DỊCH AN TOÀN TỪ HAINAGAMING.COM",
     "warrantyBoxDesc": "Tài khoản này được bán động quyền bởi đại lý Hải Na. Sau khi nhấp \"MUA TÀI KHOẢN\", mật mã tài khoản, Code Transfer và hướng dẫn đổi mật khẩu Gmail liên kết sẽ tự động gửi cho bạn trong lịch sử giao dịch. Đảm bảo an toàn, không ai khác có thể truy cập!",
     "deliveryMechanism": "Cơ chế giao hàng",
-    "deliveryAuto": "⚡ GIAO ACC TỰ ĐỘNG"
+    "deliveryAuto": "⚡ GIAO ACC TỰ ĐỘNG",
+    "remainingStock": "Còn lại: {{count}} sản phẩm",
+    "buyQuantity": "Số lượng mua:",
+    "items": "sản phẩm"
   },
   "app": {
     "tickerNews": "Hệ thống bán acc Dragon Ball Legends tự động hainagaming.com đang tặng giftcode mừng máy chủ mới! Nạp Momo / ATM cộng 10% giá trị."
@@ -228,5 +232,12 @@
     "noTxTitle": "Không tìm thấy lịch sử giao dịch",
     "noTxDesc": "Bạn chưa phát sinh giao dịch nào hoặc không có giao dịch nào khớp với bộ lọc đã chọn.",
     "viewAll": "Xem tất cả"
+  },
+  "checkout": {
+    "titleConfirm": "Xác nhận mua tài khoản",
+    "msgConfirm": "Bạn có chắc chắn muốn mua tài khoản {{id}} không? Số tiền sẽ được trừ trực tiếp từ số dư tài khoản của bạn.",
+    "totalPayment": "Tổng thanh toán:",
+    "cancel": "Hủy",
+    "confirmBuy": "Đồng ý mua"
   }
 }

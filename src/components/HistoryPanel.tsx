@@ -94,8 +94,13 @@ export default function HistoryPanel({
                     <h5 className="font-extrabold text-[#ffffff] text-xs uppercase line-clamp-1">
                       {acc.title}
                     </h5>
-                    <p className="text-[10px] text-amber-400 font-black">
-                      MÃ SỐ ACC: {acc.id}
+                    <p className="text-[10px] text-amber-400 font-black flex items-center gap-2">
+                      <span>MÃ SỐ ACC: {acc.id}</span>
+                      {acc.quantity && acc.quantity > 1 && (
+                        <span className="bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded text-[9px] font-black">
+                          x{acc.quantity}
+                        </span>
+                      )}
                     </p>
                     <p className="text-[10px] text-stone-400">
                       Game: {acc.game}

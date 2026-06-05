@@ -18,6 +18,7 @@ export interface GameAccount {
   };
   details: string[];
   status: "Available" | "Sold";
+  quantity?: number;
   credentials: {
     username: string;
     pass: string;

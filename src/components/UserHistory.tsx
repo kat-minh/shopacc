@@ -136,7 +136,10 @@ export default function UserHistory({
                                 src={acc.avatarUrl}
                                 className="w-8 h-8 rounded object-cover border border-amber-500/20 shrink-0"
                               />
-                              <span className="font-black text-amber-400 font-mono text-xs">{acc.id}</span>
+                              <span className="font-black text-amber-400 font-mono text-xs">
+                                {acc.id}
+                                {acc.quantity && acc.quantity > 1 && ` (x${acc.quantity})`}
+                              </span>
                             </div>
                           </td>
                           <td className="px-3 py-3.5 font-bold text-stone-200 truncate max-w-[200px]">

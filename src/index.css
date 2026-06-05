@@ -294,3 +294,23 @@ html[data-theme="light"] {
     color 0.3s ease,
     border-color 0.3s ease !important;
 }
+
+/* CSS Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+.animate-marquee-text {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee-text:hover {
+  animation-play-state: paused;
+}
