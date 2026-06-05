@@ -141,6 +141,7 @@ export default function App() {
   const [bannerIntroShrink, setBannerIntroShrink] = useState(false);
   const [bannerRect, setBannerRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
+  const videoBannerRef = useRef<HTMLVideoElement>(null);
   const [hasIntroPlayed, setHasIntroPlayed] = useState(false);
 
   // Checkout modal confirmations
@@ -284,6 +285,29 @@ export default function App() {
       }
     }
   }, [activeView, isBootstrapped, hasIntroPlayed]);
+
+  // Seamless video looping check using requestAnimationFrame (60fps accuracy)
+  useEffect(() => {
+    let active = true;
+    let frameId: number;
+    const checkLoop = () => {
+      const video = videoBannerRef.current;
+      if (video && video.duration) {
+        if (video.currentTime >= video.duration - 0.1) {
+          video.currentTime = 0;
+          video.play().catch(() => { });
+        }
+      }
+      if (active) {
+        frameId = requestAnimationFrame(checkLoop);
+      }
+    };
+    frameId = requestAnimationFrame(checkLoop);
+    return () => {
+      active = false;
+      cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   useEffect(() => {
     const routeView = pathToView(location.pathname);
@@ -898,247 +922,243 @@ export default function App() {
             pointerEvents: "none",
           }}
         >
-            {/* HERO & RANKING GRID SECTION */}
-            <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 items-stretch w-full">
-              {/* LEFT COLUMN: HERO BANNER (70% width, i.e. col-span-7) */}
-              <div className="lg:col-span-7 flex items-center justify-start relative aspect-video border-2 border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden bg-transparent">
-                {/* Ghost container to reserve size */}
-                <div ref={bannerRef} className="w-full h-full" />
+          {/* HERO & RANKING GRID SECTION */}
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 items-stretch w-full">
+            {/* LEFT COLUMN: HERO BANNER (70% width, i.e. col-span-7) */}
+            <div className="lg:col-span-7 flex items-center justify-start relative aspect-video border-2 border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden bg-transparent">
+              {/* Ghost container to reserve size */}
+              <div ref={bannerRef} className="w-full h-full" />
 
-                {/* The single animated banner node */}
-                <div
+              {/* The single animated banner node */}
+              <div
+                style={{
+                  position: showBannerIntro ? "fixed" : "absolute",
+                  zIndex: showBannerIntro ? 100 : 10,
+                  top: showBannerIntro
+                    ? (bannerIntroShrink && bannerRect ? bannerRect.top - window.scrollY : 0)
+                    : 0,
+                  left: showBannerIntro
+                    ? (bannerIntroShrink && bannerRect ? bannerRect.left - window.scrollX : 0)
+                    : 0,
+                  width: showBannerIntro
+                    ? (bannerIntroShrink && bannerRect ? bannerRect.width : "100vw")
+                    : "100%",
+                  height: showBannerIntro
+                    ? (bannerIntroShrink && bannerRect ? bannerRect.height : "100vh")
+                    : "100%",
+                  backgroundColor: "#1c0202",
+                  borderRadius: showBannerIntro && !(bannerIntroShrink && bannerRect) ? "0px" : "1.5rem",
+                  transition: showBannerIntro ? "all 0.55s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.55s ease" : "none",
+                  pointerEvents: showBannerIntro ? "none" : "auto",
+                  overflow: "hidden",
+                  transform: "translate3d(0, 0, 0)",
+                  willChange: "transform",
+                }}
+                className="inset-0"
+              >
+                <video
+                  ref={videoBannerRef}
+                  src={heroBannerMp4}
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="w-full h-full object-cover relative z-10"
                   style={{
-                    position: showBannerIntro ? "fixed" : "absolute",
-                    zIndex: showBannerIntro ? 100 : 10,
-                    top: showBannerIntro
-                      ? (bannerIntroShrink && bannerRect ? bannerRect.top - window.scrollY : 0)
-                      : 0,
-                    left: showBannerIntro
-                      ? (bannerIntroShrink && bannerRect ? bannerRect.left - window.scrollX : 0)
-                      : 0,
-                    width: showBannerIntro
-                      ? (bannerIntroShrink && bannerRect ? bannerRect.width : "100vw")
-                      : "100%",
-                    height: showBannerIntro
-                      ? (bannerIntroShrink && bannerRect ? bannerRect.height : "100vh")
-                      : "100%",
-                    backgroundColor: "#1c0202",
-                    borderRadius: showBannerIntro && !(bannerIntroShrink && bannerRect) ? "0px" : "1.5rem",
-                    transition: showBannerIntro ? "all 0.55s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.55s ease" : "none",
-                    pointerEvents: showBannerIntro ? "none" : "auto",
-                    overflow: "hidden",
-                    transform: "translate3d(0, 0, 0)",
-                    willChange: "transform",
-                  }}
-                  className="inset-0"
-                >
-                  <video
-                    src={heroBannerMp4}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    onEnded={(e) => {
-                      e.currentTarget.currentTime = 0;
-                      e.currentTarget.play().catch(() => {});
-                    }}
-                    className="w-full h-full object-cover relative z-10"
-                    style={{
-                      transform: "translateZ(0)",
-                      backfaceVisibility: "hidden",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* RIGHT COLUMN: MONTHLY TOP RECHARGERS RANKING (30% width, i.e. col-span-3) */}
-              <div className="lg:col-span-3 flex">
-                <div className="bg-[#4d0808] p-4 sm:p-5 rounded-3xl border-2 border-amber-500/40 shadow-xl space-y-4 flex flex-col justify-between w-full">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-rose-900/60 pb-3">
-                      <div className="flex items-center gap-1.5">
-                        <Trophy className="w-4 h-4 text-amber-400 animate-bounce" />
-                        <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider">
-                          {t("home.topRankTitle")}
-                        </h3>
-                        {/* Interactive Tooltip for Quy định */}
-                        <div className="group relative cursor-pointer flex items-center justify-center">
-                          <HelpCircle className="w-3.5 h-3.5 text-stone-400 hover:text-amber-400 transition" />
-                          <div
-                            className="absolute bottom-full right-0 mb-2 w-64 p-3 border rounded-xl shadow-2xl text-[10px] font-normal leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
-                            style={{
-                              backgroundColor: theme === "light" ? "var(--app-card-strong)" : "rgba(28, 2, 2, 0.98)",
-                              borderColor: theme === "light" ? "var(--app-border)" : "rgba(245, 158, 11, 0.4)",
-                              color: theme === "light" ? "var(--app-text-primary)" : "#d4d1c8",
-                            }}
-                          >
-                            <h5 className="font-bold text-amber-300 uppercase mb-1.5 border-b border-amber-500/20 pb-1">{t("home.topRankRules")}</h5>
-                            <ul className="space-y-1.5">
-                              <li className="flex items-start gap-1">
-                                <span>{t("home.topRankRule1")}</span>
-                              </li>
-                              <li className="flex items-start gap-1">
-                                <span>{t("home.topRankRule2")}</span>
-                              </li>
-                              <li className="flex items-start gap-1">
-                                <span>{t("home.topRankRule3")}</span>
-                              </li>
-                            </ul>
-                            <div
-                              className="absolute top-full right-1.5 border-8 border-transparent"
-                              style={{
-                                borderTopColor: theme === "light" ? "var(--app-card-strong)" : "rgba(28, 2, 2, 0.98)"
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Month selectors */}
-                      <div className="flex bg-red-950 p-0.5 rounded-lg text-[9px] border border-amber-500/10">
-                        <button
-                          onClick={() => setActiveMonthTab("june")}
-                          className={`py-0.5 px-1 rounded font-bold transition ${activeMonthTab === "june"
-                            ? "bg-amber-500 text-red-950 font-black"
-                            : "text-stone-300"
-                            }`}
-                        >
-                          {t("home.monthJune")}
-                        </button>
-                        <button
-                          onClick={() => setActiveMonthTab("may")}
-                          className={`py-0.5 px-1 rounded font-bold transition ${activeMonthTab === "may"
-                            ? "bg-amber-500 text-red-950 font-black"
-                            : "text-stone-300"
-                            }`}
-                        >
-                          {t("home.monthMay")}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 mt-3">
-                      {(activeMonthTab === "june"
-                        ? INITIAL_TOP_RECHARGERS_JUNE
-                        : INITIAL_TOP_RECHARGERS_MAY
-                      ).map((re, rank) => (
-                        <div
-                          key={rank}
-                          className="flex items-center justify-between bg-red-950/60 p-2 rounded-xl border border-amber-500/10 text-[10px]"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[9px] ${rank === 0
-                                ? "bg-yellow-400 text-red-950"
-                                : rank === 1
-                                  ? "bg-stone-300 text-red-950"
-                                  : rank === 2
-                                    ? "bg-amber-600 text-white"
-                                    : "bg-red-950 text-stone-400"
-                                }`}
-                            >
-                              {rank + 1}
-                            </span>
-                            <span className="font-extrabold text-stone-100 font-mono">
-                              {re.username}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-amber-400 font-black">
-                              {re.amount.toLocaleString()}đ
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-red-600/20 text-red-300 text-[9px] font-black px-2 py-1 rounded border border-red-500/20 text-center mt-2">
-                    {t("home.top1Reward")}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-
-            {/* CATALOG LISTINGS SECTION */}
-            <div className="space-y-6" id="cua-hang">
-
-
-              {/* Grid Products Cards divided by categories */}
-              {filteredAccounts.length === 0 ? (
-                <EmptyState
-                  title={t("home.noAccountsFound")}
-                  description={t("emptyStates.noAccountsDesc")}
-                  iconType="folder"
-                  actionText={t("home.resetFilters")}
-                  onAction={() => {
-                    setSelectedCategory("Tất cả");
-                    setSearchTerm("");
+                    transform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
                   }}
                 />
-              ) : (
-                <div className="space-y-12">
-                  {categoriesList
-                    .filter((cat) => cat !== "Tất cả" && (selectedCategory === "Tất cả" || selectedCategory === cat))
-                    .map((cat) => {
-                      const accountsInCat = filteredAccounts.filter((acc) => acc.category === cat);
-                      if (accountsInCat.length === 0) return null;
-
-                      return (
-                        <div key={cat} className="space-y-6">
-                          {/* Category Section Header */}
-                          <div className="flex items-center justify-between border-b-2 border-amber-500/20 pb-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-400">
-                                {cat.includes("ANDROID") ? (
-                                  <Smartphone className="w-5 h-5 text-amber-400" />
-                                ) : cat.includes("IOS") ? (
-                                  <svg className="w-5 h-5 text-amber-400 fill-current" viewBox="0 0 24 24">
-                                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.7-1.13 1.84-.99 2.94.1.08 2.16-.52 2.82-1.33z" />
-                                  </svg>
-                                ) : (
-                                  <Zap className="w-5 h-5 text-amber-400" />
-                                )}
-                              </div>
-                              <h3 className="font-extrabold uppercase text-stone-100 tracking-wider text-base sm:text-lg">
-                                {t("categories." + cat, cat)}
-                              </h3>
-                            </div>
-                            <span className="text-[10px] sm:text-xs font-bold text-amber-500 bg-amber-500/10 py-1 px-3 rounded-full border border-amber-500/15">
-                              {accountsInCat.length} acc
-                            </span>
-                          </div>
-
-                          {/* Accounts Grid */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {accountsInCat.map((acc) => (
-                              <ProductCard
-                                key={acc.id}
-                                account={acc}
-                                onSelect={(account) => {
-                                  setSelectedAccount(account);
-                                  setActiveView("product-detail");
-                                  navigate(`/product/${account.id}`);
-                                  window.scrollTo({ top: 0, behavior: "smooth" });
-                                }}
-                                onBuy={handleBuyAccount}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
+              </div>
             </div>
 
+            {/* RIGHT COLUMN: MONTHLY TOP RECHARGERS RANKING (30% width, i.e. col-span-3) */}
+            <div className="lg:col-span-3 flex">
+              <div className="bg-[#4d0808] p-4 sm:p-5 rounded-3xl border-2 border-amber-500/40 shadow-xl space-y-4 flex flex-col justify-between w-full">
+                <div>
+                  <div className="flex items-center justify-between border-b border-rose-900/60 pb-3">
+                    <div className="flex items-center gap-1.5">
+                      <Trophy className="w-4 h-4 text-amber-400 animate-bounce" />
+                      <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider">
+                        {t("home.topRankTitle")}
+                      </h3>
+                      {/* Interactive Tooltip for Quy định */}
+                      <div className="group relative cursor-pointer flex items-center justify-center">
+                        <HelpCircle className="w-3.5 h-3.5 text-stone-400 hover:text-amber-400 transition" />
+                        <div
+                          className="absolute bottom-full right-0 mb-2 w-64 p-3 border rounded-xl shadow-2xl text-[10px] font-normal leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+                          style={{
+                            backgroundColor: theme === "light" ? "var(--app-card-strong)" : "rgba(28, 2, 2, 0.98)",
+                            borderColor: theme === "light" ? "var(--app-border)" : "rgba(245, 158, 11, 0.4)",
+                            color: theme === "light" ? "var(--app-text-primary)" : "#d4d1c8",
+                          }}
+                        >
+                          <h5 className="font-bold text-amber-300 uppercase mb-1.5 border-b border-amber-500/20 pb-1">{t("home.topRankRules")}</h5>
+                          <ul className="space-y-1.5">
+                            <li className="flex items-start gap-1">
+                              <span>{t("home.topRankRule1")}</span>
+                            </li>
+                            <li className="flex items-start gap-1">
+                              <span>{t("home.topRankRule2")}</span>
+                            </li>
+                            <li className="flex items-start gap-1">
+                              <span>{t("home.topRankRule3")}</span>
+                            </li>
+                          </ul>
+                          <div
+                            className="absolute top-full right-1.5 border-8 border-transparent"
+                            style={{
+                              borderTopColor: theme === "light" ? "var(--app-card-strong)" : "rgba(28, 2, 2, 0.98)"
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
 
+                    {/* Month selectors */}
+                    <div className="flex bg-red-950 p-0.5 rounded-lg text-[9px] border border-amber-500/10">
+                      <button
+                        onClick={() => setActiveMonthTab("june")}
+                        className={`py-0.5 px-1 rounded font-bold transition ${activeMonthTab === "june"
+                          ? "bg-amber-500 text-red-950 font-black"
+                          : "text-stone-300"
+                          }`}
+                      >
+                        {t("home.monthJune")}
+                      </button>
+                      <button
+                        onClick={() => setActiveMonthTab("may")}
+                        className={`py-0.5 px-1 rounded font-bold transition ${activeMonthTab === "may"
+                          ? "bg-amber-500 text-red-950 font-black"
+                          : "text-stone-300"
+                          }`}
+                      >
+                        {t("home.monthMay")}
+                      </button>
+                    </div>
+                  </div>
 
+                  <div className="space-y-2 mt-3">
+                    {(activeMonthTab === "june"
+                      ? INITIAL_TOP_RECHARGERS_JUNE
+                      : INITIAL_TOP_RECHARGERS_MAY
+                    ).map((re, rank) => (
+                      <div
+                        key={rank}
+                        className="flex items-center justify-between bg-red-950/60 p-2 rounded-xl border border-amber-500/10 text-[10px]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[9px] ${rank === 0
+                              ? "bg-yellow-400 text-red-950"
+                              : rank === 1
+                                ? "bg-stone-300 text-red-950"
+                                : rank === 2
+                                  ? "bg-amber-600 text-white"
+                                  : "bg-red-950 text-stone-400"
+                              }`}
+                          >
+                            {rank + 1}
+                          </span>
+                          <span className="font-extrabold text-stone-100 font-mono">
+                            {re.username}
+                          </span>
+                        </div>
 
+                        <div className="flex items-center gap-2">
+                          <span className="text-amber-400 font-black">
+                            {re.amount.toLocaleString()}đ
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-red-600/20 text-red-300 text-[9px] font-black px-2 py-1 rounded border border-red-500/20 text-center mt-2">
+                  {t("home.top1Reward")}
+                </div>
+              </div>
+            </div>
           </div>
+
+
+          {/* CATALOG LISTINGS SECTION */}
+          <div className="space-y-6" id="cua-hang">
+
+
+            {/* Grid Products Cards divided by categories */}
+            {filteredAccounts.length === 0 ? (
+              <EmptyState
+                title={t("home.noAccountsFound")}
+                description={t("emptyStates.noAccountsDesc")}
+                iconType="folder"
+                actionText={t("home.resetFilters")}
+                onAction={() => {
+                  setSelectedCategory("Tất cả");
+                  setSearchTerm("");
+                }}
+              />
+            ) : (
+              <div className="space-y-12">
+                {categoriesList
+                  .filter((cat) => cat !== "Tất cả" && (selectedCategory === "Tất cả" || selectedCategory === cat))
+                  .map((cat) => {
+                    const accountsInCat = filteredAccounts.filter((acc) => acc.category === cat);
+                    if (accountsInCat.length === 0) return null;
+
+                    return (
+                      <div key={cat} className="space-y-6">
+                        {/* Category Section Header */}
+                        <div className="flex items-center justify-between border-b-2 border-amber-500/20 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-400">
+                              {cat.includes("ANDROID") ? (
+                                <Smartphone className="w-5 h-5 text-amber-400" />
+                              ) : cat.includes("IOS") ? (
+                                <svg className="w-5 h-5 text-amber-400 fill-current" viewBox="0 0 24 24">
+                                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.7-1.13 1.84-.99 2.94.1.08 2.16-.52 2.82-1.33z" />
+                                </svg>
+                              ) : (
+                                <Zap className="w-5 h-5 text-amber-400" />
+                              )}
+                            </div>
+                            <h3 className="font-extrabold uppercase text-stone-100 tracking-wider text-base sm:text-lg">
+                              {t("categories." + cat, cat)}
+                            </h3>
+                          </div>
+                          <span className="text-[10px] sm:text-xs font-bold text-amber-500 bg-amber-500/10 py-1 px-3 rounded-full border border-amber-500/15">
+                            {accountsInCat.length} acc
+                          </span>
+                        </div>
+
+                        {/* Accounts Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {accountsInCat.map((acc) => (
+                            <ProductCard
+                              key={acc.id}
+                              account={acc}
+                              onSelect={(account) => {
+                                setSelectedAccount(account);
+                                setActiveView("product-detail");
+                                navigate(`/product/${account.id}`);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }}
+                              onBuy={handleBuyAccount}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+
+
+
+        </div>
       </main>
 
       {/* FOOTER SECTION */}
