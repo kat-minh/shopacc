@@ -286,10 +286,11 @@ html[data-theme="light"] {
   --tw-shadow-color: rgba(26, 20, 16, 0.1);
 }
 
-/* Smooth transitions for theme switching */
-* {
+/* Smooth transitions ONLY during theme switching */
+.theme-transition,
+.theme-transition * {
   transition:
     background-color 0.3s ease,
     color 0.3s ease,
-    border-color 0.3s ease;
+    border-color 0.3s ease !important;
 }

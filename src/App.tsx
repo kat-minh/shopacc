@@ -32,7 +32,7 @@ import ToastContainer from "./components/ToastContainer";
 import ConfirmDialog from "./components/ConfirmDialog";
 import { useToastStore } from "./store/useToastStore";
 import { AppView, useAuthStore } from "./store/useAuthStore";
-import heroBannerGif from "./assets/images/final.gif";
+import heroBannerMp4 from "./assets/images/enhanced_final.mp4";
 
 import {
   Trophy,
@@ -141,7 +141,7 @@ export default function App() {
   const [bannerIntroShrink, setBannerIntroShrink] = useState(false);
   const [bannerRect, setBannerRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
-  const hasShownIntroRef = useRef(false);
+  const [hasIntroPlayed, setHasIntroPlayed] = useState(false);
 
   // Checkout modal confirmations
   const [checkoutReceipt, setCheckoutReceipt] = useState<GameAccount | null>(
@@ -246,12 +246,7 @@ export default function App() {
 
   // Trigger Banner Intro Animation when on home page
   useEffect(() => {
-    if (activeView === "home" && isBootstrapped) {
-      if (hasShownIntroRef.current) {
-        setShowBannerIntro(false);
-        return;
-      }
-
+    if (activeView === "home" && isBootstrapped && !hasIntroPlayed) {
       const timer = setTimeout(() => {
         if (bannerRef.current) {
           const rect = bannerRef.current.getBoundingClientRect();
@@ -262,7 +257,6 @@ export default function App() {
             height: rect.height,
           });
           setBannerIntroShrink(false);
-          hasShownIntroRef.current = true;
 
           // After 1 second, start shrinking
           const shrinkTimer = setTimeout(() => {
@@ -272,6 +266,7 @@ export default function App() {
           // After 1.55s (1s wait + 550ms animation), end intro
           const endTimer = setTimeout(() => {
             setShowBannerIntro(false);
+            setHasIntroPlayed(true);
           }, 1550);
 
           return () => {
@@ -284,8 +279,11 @@ export default function App() {
       return () => clearTimeout(timer);
     } else if (isBootstrapped) {
       setShowBannerIntro(false);
+      if (activeView !== "home") {
+        setHasIntroPlayed(true);
+      }
     }
-  }, [activeView, isBootstrapped]);
+  }, [activeView, isBootstrapped, hasIntroPlayed]);
 
   useEffect(() => {
     const routeView = pathToView(location.pathname);
@@ -887,24 +885,64 @@ export default function App() {
         )}
 
         {/* MAIN STORE FRONT & PRODUCTS CATALOG */}
-        {activeView === "home" && (
-          <div className="space-y-12">
+        <div
+          className="space-y-12"
+          style={activeView === "home" ? {} : {
+            position: "absolute",
+            left: "-9999px",
+            top: "-9999px",
+            width: "100%",
+            height: "0px",
+            overflow: "hidden",
+            opacity: 0,
+            pointerEvents: "none",
+          }}
+        >
             {/* HERO & RANKING GRID SECTION */}
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 items-stretch w-full">
               {/* LEFT COLUMN: HERO BANNER (70% width, i.e. col-span-7) */}
-              <div className="lg:col-span-7 flex items-center justify-start">
+              <div className="lg:col-span-7 flex items-center justify-start relative aspect-video border-2 border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden bg-transparent">
+                {/* Ghost container to reserve size */}
+                <div ref={bannerRef} className="w-full h-full" />
+
+                {/* The single animated banner node */}
                 <div
-                  ref={bannerRef}
                   style={{
-                    opacity: showBannerIntro && !bannerIntroShrink ? 0 : 1,
-                    transition: "opacity 0.3s ease",
+                    position: showBannerIntro ? "fixed" : "absolute",
+                    zIndex: showBannerIntro ? 100 : 10,
+                    top: showBannerIntro
+                      ? (bannerIntroShrink && bannerRect ? bannerRect.top - window.scrollY : 0)
+                      : 0,
+                    left: showBannerIntro
+                      ? (bannerIntroShrink && bannerRect ? bannerRect.left - window.scrollX : 0)
+                      : 0,
+                    width: showBannerIntro
+                      ? (bannerIntroShrink && bannerRect ? bannerRect.width : "100vw")
+                      : "100%",
+                    height: showBannerIntro
+                      ? (bannerIntroShrink && bannerRect ? bannerRect.height : "100vh")
+                      : "100%",
+                    backgroundColor: "#1c0202",
+                    borderRadius: showBannerIntro && !(bannerIntroShrink && bannerRect) ? "0px" : "1.5rem",
+                    transition: showBannerIntro ? "all 0.55s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.55s ease" : "none",
+                    pointerEvents: showBannerIntro ? "none" : "auto",
+                    overflow: "hidden",
+                    transform: "translate3d(0, 0, 0)",
+                    willChange: "transform",
                   }}
-                  className="relative bg-[#3d0303] border-2 border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden w-full"
+                  className="inset-0"
                 >
-                  <img
-                    src={heroBannerGif}
-                    alt="Banner Hainagaming"
-                    className="w-full h-auto object-contain"
+                  <video
+                    src={heroBannerMp4}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover relative z-10"
+                    style={{
+                      transform: "translateZ(0)",
+                      backfaceVisibility: "hidden",
+                    }}
                   />
                 </div>
               </div>
@@ -1096,7 +1134,6 @@ export default function App() {
 
 
           </div>
-        )}
       </main>
 
       {/* FOOTER SECTION */}
@@ -1326,30 +1363,6 @@ export default function App() {
           setPendingAccountToBuy(null);
         }}
       />
-      {/* FULL SCREEN BANNER INTRO OVERLAY */}
-      {showBannerIntro && (
-        <div
-          className="fixed z-[100] overflow-hidden pointer-events-none transition-all"
-          style={{
-            backgroundColor: bannerIntroShrink ? "transparent" : "#1c0202",
-            top: bannerIntroShrink && bannerRect ? bannerRect.top - window.scrollY : 0,
-            left: bannerIntroShrink && bannerRect ? bannerRect.left - window.scrollX : 0,
-            width: bannerIntroShrink && bannerRect ? bannerRect.width : "100vw",
-            height: bannerIntroShrink && bannerRect ? bannerRect.height : "100vh",
-            transition: "all 0.55s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.55s ease",
-          }}
-        >
-          <img
-            src={heroBannerGif}
-            alt="Intro Banner"
-            className="w-full h-full transition-all duration-550"
-            style={{
-              objectFit: "contain",
-              borderRadius: bannerIntroShrink && bannerRect ? "1.5rem" : "0px",
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 }

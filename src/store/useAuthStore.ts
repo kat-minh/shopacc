@@ -67,6 +67,10 @@ export const useAuthStore = create<AuthState>((set) => {
         const nextTheme = state.theme === "dark" ? "light" : "dark";
         if (typeof window !== "undefined") {
           window.localStorage.setItem("haina_theme", nextTheme);
+          document.documentElement.classList.add("theme-transition");
+          setTimeout(() => {
+            document.documentElement.classList.remove("theme-transition");
+          }, 350);
         }
         return { theme: nextTheme };
       }),
