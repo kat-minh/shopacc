@@ -112,6 +112,7 @@ html[data-theme="light"] .bg-stone-700 {
 }
 
 /* Text colors for light mode */
+html[data-theme="light"] .text-stone-50,
 html[data-theme="light"] .text-stone-100,
 html[data-theme="light"] .text-stone-200 {
   color: #2f2114 !important;
