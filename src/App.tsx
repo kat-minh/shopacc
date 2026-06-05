@@ -141,6 +141,7 @@ export default function App() {
   const [bannerIntroShrink, setBannerIntroShrink] = useState(false);
   const [bannerRect, setBannerRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
+  const hasShownIntroRef = useRef(false);
 
   // Checkout modal confirmations
   const [checkoutReceipt, setCheckoutReceipt] = useState<GameAccount | null>(
@@ -246,6 +247,11 @@ export default function App() {
   // Trigger Banner Intro Animation when on home page
   useEffect(() => {
     if (activeView === "home" && isBootstrapped) {
+      if (hasShownIntroRef.current) {
+        setShowBannerIntro(false);
+        return;
+      }
+
       const timer = setTimeout(() => {
         if (bannerRef.current) {
           const rect = bannerRef.current.getBoundingClientRect();
@@ -256,6 +262,7 @@ export default function App() {
             height: rect.height,
           });
           setBannerIntroShrink(false);
+          hasShownIntroRef.current = true;
 
           // After 1 second, start shrinking
           const shrinkTimer = setTimeout(() => {
@@ -643,8 +650,11 @@ export default function App() {
     >
       {/* GLOBAL WALLPAPER BACKGROUND */}
       <div
-        className="fixed inset-0 z-[-10] pointer-events-none overflow-hidden global-wallpaper"
+        className="fixed inset-0 z-[-10] pointer-events-none overflow-hidden"
         style={{
+          backgroundImage: "url('https://wallpapers-clan.com/wp-content/uploads/2025/05/shenron-goku-dragonball-epic-scene-pc-desktop-laptop-wallpaper-preview.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
           filter: theme === "light" ? "brightness(0.95)" : "brightness(0.48)",
           transform: "scale(1.02)",
           opacity: theme === "light" ? 0.55 : 0.9,
