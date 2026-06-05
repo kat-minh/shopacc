@@ -938,6 +938,11 @@ export default function App() {
                     loop
                     muted
                     playsInline
+                    preload="auto"
+                    onEnded={(e) => {
+                      e.currentTarget.currentTime = 0;
+                      e.currentTarget.play().catch(() => {});
+                    }}
                     className="w-full h-full object-cover relative z-10"
                     style={{
                       transform: "translateZ(0)",
