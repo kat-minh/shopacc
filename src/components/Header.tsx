@@ -143,7 +143,7 @@ export default function Header({
         {/* User Account area (Desktop) / Login Button */}
         <div className="flex items-center gap-3">
           {/* Language Switcher Dropdown */}
-          <div className="relative" onMouseLeave={() => setLangDropdownOpen(false)}>
+          <div className="hidden sm:block relative" onMouseLeave={() => setLangDropdownOpen(false)}>
             <button
               onClick={() => setLangDropdownOpen(!langDropdownOpen)}
               onMouseEnter={() => setLangDropdownOpen(true)}
