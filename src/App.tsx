@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -131,6 +131,12 @@ export default function App() {
   // Gacha spin anim state proxies
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
 
+  // Banner Intro Animation states
+  const [showBannerIntro, setShowBannerIntro] = useState(false);
+  const [bannerIntroShrink, setBannerIntroShrink] = useState(false);
+  const [bannerRect, setBannerRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
+
   // Checkout modal confirmations
   const [checkoutReceipt, setCheckoutReceipt] = useState<GameAccount | null>(
     null,
@@ -204,6 +210,42 @@ export default function App() {
       document.documentElement.style.colorScheme = theme;
     }
   }, [theme]);
+
+  // Trigger Banner Intro Animation when on home page
+  useEffect(() => {
+    if (activeView === "home" && isBootstrapped) {
+      const timer = setTimeout(() => {
+        if (bannerRef.current) {
+          const rect = bannerRef.current.getBoundingClientRect();
+          setBannerRect({
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+            height: rect.height,
+          });
+          setShowBannerIntro(true);
+          setBannerIntroShrink(false);
+
+          // After 2 seconds, start shrinking
+          const shrinkTimer = setTimeout(() => {
+            setBannerIntroShrink(true);
+          }, 2000);
+
+          // After 2.8s (2s wait + 800ms animation), end intro
+          const endTimer = setTimeout(() => {
+            setShowBannerIntro(false);
+          }, 2800);
+
+          return () => {
+            clearTimeout(shrinkTimer);
+            clearTimeout(endTimer);
+          };
+        }
+      }, 150);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeView, isBootstrapped]);
 
   useEffect(() => {
     const routeView = pathToView(location.pathname);
@@ -745,7 +787,14 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 items-stretch w-full">
               {/* LEFT COLUMN: HERO BANNER (70% width, i.e. col-span-7) */}
               <div className="lg:col-span-7 flex items-center justify-start">
-                <div className="relative bg-[#3d0303] border-2 border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden w-full">
+                <div
+                  ref={bannerRef}
+                  style={{
+                    opacity: showBannerIntro && !bannerIntroShrink ? 0 : 1,
+                    transition: "opacity 0.3s ease",
+                  }}
+                  className="relative bg-[#3d0303] border-2 border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden w-full"
+                >
                   <img
                     src={heroBannerGif}
                     alt="Banner Hainagaming"
@@ -1171,6 +1220,30 @@ export default function App() {
           setPendingAccountToBuy(null);
         }}
       />
+      {/* FULL SCREEN BANNER INTRO OVERLAY */}
+      {showBannerIntro && bannerRect && (
+        <div
+          className="fixed z-[100] overflow-hidden pointer-events-none transition-all"
+          style={{
+            backgroundColor: bannerIntroShrink ? "transparent" : "#1c0202",
+            top: bannerIntroShrink ? bannerRect.top - window.scrollY : 0,
+            left: bannerIntroShrink ? bannerRect.left - window.scrollX : 0,
+            width: bannerIntroShrink ? bannerRect.width : "100vw",
+            height: bannerIntroShrink ? bannerRect.height : "100vh",
+            transition: "all 0.8s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.8s ease",
+          }}
+        >
+          <img
+            src={heroBannerGif}
+            alt="Intro Banner"
+            className="w-full h-full transition-all duration-800"
+            style={{
+              objectFit: "contain",
+              borderRadius: bannerIntroShrink ? "1.5rem" : "0px",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
