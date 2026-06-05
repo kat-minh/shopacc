@@ -22,6 +22,11 @@ interface RechargeSectionProps {
   currentUser: { username: string; balance: number };
   activeTab: "card" | "atm";
   setActiveTab: (tab: "card" | "atm") => void;
+  atmBank: string;
+  atmAccountNumber: string;
+  atmAccountOwner: string;
+  momoPhone: string;
+  momoAccountOwner: string;
 }
 
 export default function RechargeSection({
@@ -29,6 +34,11 @@ export default function RechargeSection({
   currentUser,
   activeTab,
   setActiveTab,
+  atmBank,
+  atmAccountNumber,
+  atmAccountOwner,
+  momoPhone,
+  momoAccountOwner,
 }: RechargeSectionProps) {
   const { t } = useTranslation();
   const { addToast } = useToastStore();
@@ -254,13 +264,13 @@ export default function RechargeSection({
                     {t("recharge.titleAtm")}
                   </h4>
                   <div className="space-y-1 mt-2 text-xs sm:text-xs font-bold text-stone-200">
-                    <p>{t("recharge.labelBank")} <span className="text-red-500 font-extrabold">ACB</span></p>
-                    <p>{t("recharge.labelAccountNumber")} <span className="text-red-500 font-extrabold font-mono">17506391</span></p>
-                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">DOAN KHAC Y</span></p>
+                    <p>{t("recharge.labelBank")} <span className="text-red-500 font-extrabold">{atmBank}</span></p>
+                    <p>{t("recharge.labelAccountNumber")} <span className="text-red-500 font-extrabold font-mono">{atmAccountNumber}</span></p>
+                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">{atmAccountOwner}</span></p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleCopy("17506391", "stk_acb")}
+                    onClick={() => handleCopy(atmAccountNumber, "stk_acb")}
                     className="mt-3 bg-stone-600 hover:bg-stone-500 text-white px-3 py-1.5 text-[10px] font-bold rounded transition transform active:scale-95 duration-150 uppercase"
                   >
                     {copiedText === "stk_acb" ? t("recharge.copied") : t("recharge.btnCopyAccount")}
@@ -270,7 +280,7 @@ export default function RechargeSection({
                 <div className="bg-white p-1.5 rounded-lg border border-stone-200 self-center shrink-0 flex items-center justify-center">
                   <div className="w-20 h-20 relative bg-stone-50 flex items-center justify-center">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=STK:17506391_BANK:ACB_MEMO:NAP_${currentUser.username}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=STK:${atmAccountNumber}_BANK:${atmBank}_MEMO:NAP_${currentUser.username}`}
                       alt="VietQR Bank"
                       className="w-full h-full object-contain"
                     />
@@ -286,12 +296,12 @@ export default function RechargeSection({
                   </h4>
                   <div className="space-y-1 mt-2 text-xs sm:text-xs font-bold text-stone-200">
                     <p>{t("recharge.labelMomo")} <span className="text-red-500 font-extrabold">MOMO</span></p>
-                    <p>{t("recharge.labelPhone")} <span className="text-red-500 font-extrabold font-mono">0399881122</span></p>
-                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">DOAN KHAC Y</span></p>
+                    <p>{t("recharge.labelPhone")} <span className="text-red-500 font-extrabold font-mono">{momoPhone}</span></p>
+                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">{momoAccountOwner}</span></p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleCopy("0399881122", "sdt_momo")}
+                    onClick={() => handleCopy(momoPhone, "sdt_momo")}
                     className="mt-3 bg-stone-600 hover:bg-stone-500 text-white px-3 py-1.5 text-[10px] font-bold rounded transition transform active:scale-95 duration-150 uppercase"
                   >
                     {copiedText === "sdt_momo" ? t("recharge.copied") : t("recharge.btnCopyPhone")}
@@ -301,7 +311,7 @@ export default function RechargeSection({
                 <div className="bg-white p-1.5 rounded-lg border border-stone-200 self-center shrink-0 flex items-center justify-center">
                   <div className="w-20 h-20 relative bg-stone-50 flex items-center justify-center">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PHONE:0399881122_MEMO:NAP_${currentUser.username}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PHONE:${momoPhone}_MEMO:NAP_${currentUser.username}`}
                       alt="Momo QR"
                       className="w-full h-full object-contain"
                     />

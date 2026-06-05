@@ -151,6 +151,14 @@ export default function App() {
   // Recharge sub-tabs
   const [rechargeTab, setRechargeTab] = useState<"card" | "atm">("card");
 
+  // Web Content Customization States
+  const [tickerNews, setTickerNews] = useState<string>("Hệ thống bán acc Dragon Ball Legends tự động hainagaming.com đang tặng giftcode mừng máy chủ mới! Nạp Momo / ATM cộng 10% giá trị.");
+  const [atmBank, setAtmBank] = useState<string>("ACB");
+  const [atmAccountNumber, setAtmAccountNumber] = useState<string>("17506391");
+  const [atmAccountOwner, setAtmAccountOwner] = useState<string>("DOAN KHAC Y");
+  const [momoPhone, setMomoPhone] = useState<string>("0399881122");
+  const [momoAccountOwner, setMomoAccountOwner] = useState<string>("DOAN KHAC Y");
+
   // Load and bootstrap initial state from local storage securely
   useEffect(() => {
     // Accounts
@@ -200,6 +208,25 @@ export default function App() {
     } else {
       setBoughtAccounts([]);
     }
+
+    // Web content settings
+    const savedTickerNews = localStorage.getItem("haina_ticker_news");
+    if (savedTickerNews) setTickerNews(savedTickerNews);
+
+    const savedAtmBank = localStorage.getItem("haina_atm_bank");
+    if (savedAtmBank) setAtmBank(savedAtmBank);
+
+    const savedAtmAccountNumber = localStorage.getItem("haina_atm_number");
+    if (savedAtmAccountNumber) setAtmAccountNumber(savedAtmAccountNumber);
+
+    const savedAtmAccountOwner = localStorage.getItem("haina_atm_owner");
+    if (savedAtmAccountOwner) setAtmAccountOwner(savedAtmAccountOwner);
+
+    const savedMomoPhone = localStorage.getItem("haina_momo_phone");
+    if (savedMomoPhone) setMomoPhone(savedMomoPhone);
+
+    const savedMomoAccountOwner = localStorage.getItem("haina_momo_owner");
+    if (savedMomoAccountOwner) setMomoAccountOwner(savedMomoAccountOwner);
 
     setIsBootstrapped(true);
   }, []);
@@ -488,6 +515,32 @@ export default function App() {
     localStorage.setItem("haina_accounts", JSON.stringify(updated));
   };
 
+  // Web content updates
+  const handleUpdateTickerNews = (text: string) => {
+    setTickerNews(text);
+    localStorage.setItem("haina_ticker_news", text);
+  };
+
+  const handleUpdateBilling = (billing: {
+    atmBank: string;
+    atmAccountNumber: string;
+    atmAccountOwner: string;
+    momoPhone: string;
+    momoAccountOwner: string;
+  }) => {
+    setAtmBank(billing.atmBank);
+    setAtmAccountNumber(billing.atmAccountNumber);
+    setAtmAccountOwner(billing.atmAccountOwner);
+    setMomoPhone(billing.momoPhone);
+    setMomoAccountOwner(billing.momoAccountOwner);
+
+    localStorage.setItem("haina_atm_bank", billing.atmBank);
+    localStorage.setItem("haina_atm_number", billing.atmAccountNumber);
+    localStorage.setItem("haina_atm_owner", billing.atmAccountOwner);
+    localStorage.setItem("haina_momo_phone", billing.momoPhone);
+    localStorage.setItem("haina_momo_owner", billing.momoAccountOwner);
+  };
+
   // Reset entire simulation database
   const handleResetShopAdmin = () => {
     localStorage.removeItem("haina_accounts");
@@ -495,10 +548,22 @@ export default function App() {
     localStorage.removeItem("haina_bought_accounts");
     localStorage.removeItem("haina_user");
     localStorage.removeItem("haina_is_admin");
+    localStorage.removeItem("haina_ticker_news");
+    localStorage.removeItem("haina_atm_bank");
+    localStorage.removeItem("haina_atm_number");
+    localStorage.removeItem("haina_atm_owner");
+    localStorage.removeItem("haina_momo_phone");
+    localStorage.removeItem("haina_momo_owner");
 
     setAccounts(INITIAL_ACCOUNTS);
     setTransactions([]);
     setBoughtAccounts([]);
+    setTickerNews("Hệ thống bán acc Dragon Ball Legends tự động hainagaming.com đang tặng giftcode mừng máy chủ mới! Nạp Momo / ATM cộng 10% giá trị.");
+    setAtmBank("ACB");
+    setAtmAccountNumber("17506391");
+    setAtmAccountOwner("DOAN KHAC Y");
+    setMomoPhone("0399881122");
+    setMomoAccountOwner("DOAN KHAC Y");
 
     const defaultUser = { username: "hoang_gamer99", balance: 500000 };
     syncUser(defaultUser, false);
@@ -607,7 +672,7 @@ export default function App() {
       {activeView !== "admin" && (
         <div className="bg-linear-to-r from-amber-500 via-yellow-400 to-amber-500 text-red-950 font-black text-xs py-2 px-4 shadow text-center flex items-center justify-center gap-2 overflow-hidden">
           <p className="uppercase tracking-wider truncate">
-            {t("app.tickerNews")}
+            {tickerNews}
           </p>
         </div>
       )}
@@ -750,6 +815,14 @@ export default function App() {
             onResetShop={handleResetShopAdmin}
             onBack={handleLogout}
             onEditAccount={handleEditAccountAdmin}
+            tickerNews={tickerNews}
+            onUpdateTickerNews={handleUpdateTickerNews}
+            atmBank={atmBank}
+            atmAccountNumber={atmAccountNumber}
+            atmAccountOwner={atmAccountOwner}
+            momoPhone={momoPhone}
+            momoAccountOwner={momoAccountOwner}
+            onUpdateBilling={handleUpdateBilling}
           />
         )}
 
@@ -777,6 +850,11 @@ export default function App() {
               currentUser={currentUser}
               activeTab={rechargeTab}
               setActiveTab={setRechargeTab}
+              atmBank={atmBank}
+              atmAccountNumber={atmAccountNumber}
+              atmAccountOwner={atmAccountOwner}
+              momoPhone={momoPhone}
+              momoAccountOwner={momoAccountOwner}
             />
           </div>
         )}

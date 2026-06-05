@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { GameAccount, Transaction } from "../data";
 import {
   Shield,
@@ -16,6 +16,8 @@ import {
   BarChart3,
   PieChart,
   TrendingUp,
+  Settings,
+  Home,
 } from "lucide-react";
 import EmptyState from "./EmptyState";
 import ConfirmDialog from "./ConfirmDialog";
@@ -29,6 +31,21 @@ interface AdminPanelProps {
   onResetShop: () => void;
   onBack: () => void;
   onEditAccount?: (updatedAcc: GameAccount) => void;
+  // New props for editing web content
+  tickerNews: string;
+  onUpdateTickerNews: (text: string) => void;
+  atmBank: string;
+  atmAccountNumber: string;
+  atmAccountOwner: string;
+  momoPhone: string;
+  momoAccountOwner: string;
+  onUpdateBilling: (billing: {
+    atmBank: string;
+    atmAccountNumber: string;
+    atmAccountOwner: string;
+    momoPhone: string;
+    momoAccountOwner: string;
+  }) => void;
 }
 
 export default function AdminPanel({
@@ -39,10 +56,18 @@ export default function AdminPanel({
   onResetShop,
   onBack,
   onEditAccount,
+  tickerNews,
+  onUpdateTickerNews,
+  atmBank,
+  atmAccountNumber,
+  atmAccountOwner,
+  momoPhone,
+  momoAccountOwner,
+  onUpdateBilling,
 }: AdminPanelProps) {
   // Navigation & tabs states
   const { addToast } = useToastStore();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "transactions" | "accounts">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "transactions" | "accounts" | "content">("dashboard");
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [selectedAcc, setSelectedAcc] = useState<GameAccount | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -106,6 +131,27 @@ export default function AdminPanel({
   const [editStatus, setEditStatus] = useState<"Available" | "Sold">("Available");
 
   const [notif, setNotif] = useState<string>("");
+
+  // Content Sub-tabs
+  const [contentSubTab, setContentSubTab] = useState<"home" | "recharge">("home");
+
+  // Web content local form states
+  const [localTicker, setLocalTicker] = useState(tickerNews);
+  const [localAtmBank, setLocalAtmBank] = useState(atmBank);
+  const [localAtmNumber, setLocalAtmNumber] = useState(atmAccountNumber);
+  const [localAtmOwner, setLocalAtmOwner] = useState(atmAccountOwner);
+  const [localMomoPhone, setLocalMomoPhone] = useState(momoPhone);
+  const [localMomoOwner, setLocalMomoOwner] = useState(momoAccountOwner);
+
+  // Synchronize local states when props change
+  useEffect(() => {
+    setLocalTicker(tickerNews);
+    setLocalAtmBank(atmBank);
+    setLocalAtmNumber(atmAccountNumber);
+    setLocalAtmOwner(atmAccountOwner);
+    setLocalMomoPhone(momoPhone);
+    setLocalMomoOwner(momoAccountOwner);
+  }, [tickerNews, atmBank, atmAccountNumber, atmAccountOwner, momoPhone, momoAccountOwner]);
 
   const handleAddSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -471,6 +517,16 @@ export default function AdminPanel({
             >
               <Inbox className="w-4 h-4 shrink-0" />
               Quản lý Acc Game
+            </button>
+            <button
+              onClick={() => setActiveTab("content")}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2.5 transition ${activeTab === "content"
+                ? "bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20"
+                : "text-stone-300 hover:bg-stone-900/50 hover:text-amber-400"
+                }`}
+            >
+              <Settings className="w-4 h-4 shrink-0" />
+              Chỉnh sửa nội dung web
             </button>
           </div>
 
@@ -1137,6 +1193,198 @@ export default function AdminPanel({
                     </div>
                   )}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: WEB CONTENT CONFIGURATION */}
+          {activeTab === "content" && (
+            <div className="bg-[#4d0808] p-5 sm:p-6 rounded-3xl border border-amber-500/20 shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-500/15">
+                <h4 className="font-extrabold uppercase text-sm text-stone-100 flex items-center gap-1.5">
+                  <Settings className="w-4 h-4 text-amber-400" />
+                  Chỉnh sửa nội dung trang web
+                </h4>
+                
+                {/* Sub-tabs switch */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setContentSubTab("home")}
+                    className={`py-1.5 px-4 rounded-xl font-bold text-xs transition uppercase ${contentSubTab === "home"
+                      ? "bg-amber-500 text-stone-950 shadow-md font-black"
+                      : "bg-stone-900/40 text-stone-300 border border-amber-500/10 hover:bg-stone-900/80"
+                      }`}
+                  >
+                    <Home className="w-3.5 h-3.5 inline mr-1" /> Home
+                  </button>
+                  <button
+                    onClick={() => setContentSubTab("recharge")}
+                    className={`py-1.5 px-4 rounded-xl font-bold text-xs transition uppercase ${contentSubTab === "recharge"
+                      ? "bg-emerald-500 text-stone-950 shadow-md font-black"
+                      : "bg-stone-900/40 text-stone-300 border border-amber-500/10 hover:bg-stone-900/80"
+                      }`}
+                  >
+                    <Coins className="w-3.5 h-3.5 inline mr-1" /> Trang nạp
+                  </button>
+                </div>
+              </div>
+
+              {contentSubTab === "home" && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    onUpdateTickerNews(localTicker);
+                    addToast("Cập nhật thông báo hệ thống thành công!", "success");
+                  }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-amber-300 uppercase">
+                      Nội dung thông báo chạy chữ (Marquee Ticker News)
+                    </label>
+                    <textarea
+                      value={localTicker}
+                      onChange={(e) => setLocalTicker(e.target.value)}
+                      placeholder="Nhập nội dung thông báo cho trang chủ..."
+                      rows={4}
+                      className="w-full bg-red-950/80 border border-amber-500/20 rounded-2xl p-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      required
+                    />
+                    <p className="text-[10px] text-stone-400 italic">
+                      Lưu ý: Thông báo này sẽ hiển thị chạy ngang trên tất cả các trang ngoại trừ giao diện quản trị.
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-black py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition duration-150 transform active:scale-95 cursor-pointer shadow-lg"
+                  >
+                    Lưu thông báo
+                  </button>
+                </form>
+              )}
+
+              {contentSubTab === "recharge" && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    onUpdateBilling({
+                      atmBank: localAtmBank,
+                      atmAccountNumber: localAtmNumber,
+                      atmAccountOwner: localAtmOwner,
+                      momoPhone: localMomoPhone,
+                      momoAccountOwner: localMomoOwner,
+                    });
+                    addToast("Cập nhật thông tin nạp Momo & ATM thành công!", "success");
+                  }}
+                  className="space-y-6"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Momo Configuration Card */}
+                    <div className="bg-[#2c0404]/80 p-5 rounded-2xl border border-amber-500/10 space-y-4">
+                      <div className="border-b border-rose-900/40 pb-2 flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <h5 className="font-extrabold text-xs uppercase text-amber-300 tracking-wider">
+                          Cấu hình ví điện tử MOMO
+                        </h5>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                            Số điện thoại ví Momo *
+                          </label>
+                          <input
+                            type="text"
+                            value={localMomoPhone}
+                            onChange={(e) => setLocalMomoPhone(e.target.value)}
+                            className="w-full bg-red-950/80 border border-amber-500/20 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono font-bold"
+                            placeholder="Ví dụ: 0399881122"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                            Tên chủ ví (In hoa không dấu) *
+                          </label>
+                          <input
+                            type="text"
+                            value={localMomoOwner}
+                            onChange={(e) => setLocalMomoOwner(e.target.value)}
+                            className="w-full bg-red-950/80 border border-amber-500/20 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-bold"
+                            placeholder="Ví dụ: DOAN KHAC Y"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ATM banking Configuration Card */}
+                    <div className="bg-[#2c0404]/80 p-5 rounded-2xl border border-amber-500/10 space-y-4">
+                      <div className="border-b border-rose-900/40 pb-2 flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                        <h5 className="font-extrabold text-xs uppercase text-amber-300 tracking-wider">
+                          Cấu hình chuyển khoản Ngân hàng (ATM)
+                        </h5>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                            Tên ngân hàng (Ký hiệu VietQR) *
+                          </label>
+                          <input
+                            type="text"
+                            value={localAtmBank}
+                            onChange={(e) => setLocalAtmBank(e.target.value)}
+                            className="w-full bg-red-950/80 border border-amber-500/20 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-bold"
+                            placeholder="Ví dụ: ACB, MB, VCB..."
+                            required
+                          />
+                          <p className="text-[9px] text-stone-400 mt-0.5">
+                            * Vui lòng điền đúng mã định danh ngân hàng (ví dụ: ACB, MB, TCB, VCB) để QR code ngân hàng hoạt động đúng.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                            Số tài khoản nhận tiền *
+                          </label>
+                          <input
+                            type="text"
+                            value={localAtmNumber}
+                            onChange={(e) => setLocalAtmNumber(e.target.value)}
+                            className="w-full bg-red-950/80 border border-amber-500/20 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono font-bold"
+                            placeholder="Ví dụ: 17506391"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                            Tên người nhận (In hoa không dấu) *
+                          </label>
+                          <input
+                            type="text"
+                            value={localAtmOwner}
+                            onChange={(e) => setLocalAtmOwner(e.target.value)}
+                            className="w-full bg-red-950/80 border border-amber-500/20 rounded-xl py-2 px-3 text-xs sm:text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-bold"
+                            placeholder="Ví dụ: DOAN KHAC Y"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition duration-150 transform active:scale-95 cursor-pointer shadow-lg"
+                  >
+                    Lưu cấu hình chuyển khoản
+                  </button>
+                </form>
               )}
             </div>
           )}
