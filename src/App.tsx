@@ -643,11 +643,8 @@ export default function App() {
     >
       {/* GLOBAL WALLPAPER BACKGROUND */}
       <div
-        className="fixed inset-0 z-[-10] pointer-events-none overflow-hidden"
+        className="fixed inset-0 z-[-10] pointer-events-none overflow-hidden global-wallpaper"
         style={{
-          backgroundImage: "url('https://wallpapers-clan.com/wp-content/uploads/2025/05/shenron-goku-dragonball-epic-scene-pc-desktop-laptop-wallpaper-preview.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
           filter: theme === "light" ? "brightness(0.95)" : "brightness(0.48)",
           transform: "scale(1.02)",
           opacity: theme === "light" ? 0.55 : 0.9,

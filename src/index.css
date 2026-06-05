@@ -293,3 +293,12 @@ html[data-theme="light"] {
     color 0.3s ease,
     border-color 0.3s ease;
 }
+
+.global-wallpaper {
+  background-image: url('https://wallpapers-clan.com/wp-content/uploads/2025/05/shenron-goku-dragonball-epic-scene-pc-desktop-laptop-wallpaper-preview.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: filter, opacity;
+  transition: filter 0.3s ease, opacity 0.3s ease !important;
+}
