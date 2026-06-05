@@ -64,9 +64,9 @@ html[data-theme="light"] [class*="bg-[#5a0909"] {
   background-color: var(--app-card) !important;
 }
 
-/* Main app container light mode - use background variable instead of hardcoded color */
+/* Main app container light mode */
 html[data-theme="light"] main {
-  background-color: var(--app-bg) !important;
+  background-color: transparent !important;
 }
 
 html[data-theme="light"] [class*="min-h-screen"][class*="bg-\[\#1c0202\]"] {

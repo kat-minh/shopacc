@@ -63,9 +63,29 @@ export default function LoginForm({
     }
   };
 
+  const isLightTheme = typeof document !== "undefined" && document.documentElement.dataset.theme === "light";
+
   return (
-    <div className="min-h-screen w-screen bg-[#1c0202] text-stone-100 flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full p-8 bg-[#4d0808] rounded-3xl border-2 border-amber-500/40 shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen w-screen text-stone-100 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Blurred Goku Wallpaper */}
+      <div
+        className="absolute inset-0 z-[-10] pointer-events-none"
+        style={{
+          backgroundImage: "url('https://wallpapers-clan.com/wp-content/uploads/2025/05/shenron-goku-dragonball-epic-scene-pc-desktop-laptop-wallpaper-preview.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: isLightTheme ? "brightness(0.95)" : "brightness(0.48)",
+          transform: "scale(1.02)",
+          opacity: isLightTheme ? 0.55 : 0.9,
+        }}
+      />
+      <div 
+        className="absolute inset-0 z-[-10] pointer-events-none" 
+        style={{
+          backgroundColor: isLightTheme ? "transparent" : "rgba(28, 2, 2, 0.2)"
+        }}
+      />
+      <div className="max-w-md w-full p-8 bg-[#4d0808] rounded-3xl border-2 border-amber-500/40 shadow-2xl relative overflow-hidden z-10">
         {/* Decorative floral elements */}
         <div className="absolute top-0 right-0 w-24 h-24 bg-linear-to-bl from-amber-400/10 to-transparent rounded-bl-full pointer-events-none"></div>
 

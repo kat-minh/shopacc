@@ -226,15 +226,15 @@ export default function App() {
           setShowBannerIntro(true);
           setBannerIntroShrink(false);
 
-          // After 2 seconds, start shrinking
+          // After 1 second, start shrinking
           const shrinkTimer = setTimeout(() => {
             setBannerIntroShrink(true);
-          }, 2000);
+          }, 1000);
 
-          // After 2.8s (2s wait + 800ms animation), end intro
+          // After 1.55s (1s wait + 550ms animation), end intro
           const endTimer = setTimeout(() => {
             setShowBannerIntro(false);
-          }, 2800);
+          }, 1550);
 
           return () => {
             clearTimeout(shrinkTimer);
@@ -564,9 +564,24 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen bg-[#1c0202] text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-red-950 transition-colors duration-300"
+      className="min-h-screen text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-red-950 transition-colors duration-300 relative"
+      style={{
+        backgroundColor: theme === "light" ? "transparent" : "rgba(28, 2, 2, 0.2)"
+      }}
       data-theme={theme}
     >
+      {/* GLOBAL WALLPAPER BACKGROUND */}
+      <div
+        className="fixed inset-0 z-[-10] pointer-events-none overflow-hidden"
+        style={{
+          backgroundImage: "url('https://wallpapers-clan.com/wp-content/uploads/2025/05/shenron-goku-dragonball-epic-scene-pc-desktop-laptop-wallpaper-preview.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: theme === "light" ? "brightness(0.95)" : "brightness(0.48)",
+          transform: "scale(1.02)",
+          opacity: theme === "light" ? 0.55 : 0.9,
+        }}
+      />
       {/* HEADER SECTION */}
       {activeView !== "admin" && (
         <Header
@@ -1230,13 +1245,13 @@ export default function App() {
             left: bannerIntroShrink ? bannerRect.left - window.scrollX : 0,
             width: bannerIntroShrink ? bannerRect.width : "100vw",
             height: bannerIntroShrink ? bannerRect.height : "100vh",
-            transition: "all 0.8s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.8s ease",
+            transition: "all 0.55s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.55s ease",
           }}
         >
           <img
             src={heroBannerGif}
             alt="Intro Banner"
-            className="w-full h-full transition-all duration-800"
+            className="w-full h-full transition-all duration-550"
             style={{
               objectFit: "contain",
               borderRadius: bannerIntroShrink ? "1.5rem" : "0px",
