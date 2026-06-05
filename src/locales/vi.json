@@ -184,7 +184,7 @@
     "powerLevelValue": "PL {{level}}",
     "marketPrice": "Thị trường: {{price}}đ",
     "savePercent": "TIẾT KIỆM {{percent}}%",
-    "btnBuyNow": "🚀 MUA TÀI KHOẢN NÀY KHẨN CẤP",
+    "btnBuyNow": "MUA TÀI KHOẢN NÀY KHẨN CẤP",
     "btnSoldOut": "TÀI KHOẢN NÀY ĐÃ ĐƯỢC BÁN",
     "userBalance": "Số dư ví của bạn: {{balance}}đ",
     "missingBalance": "Thiếu: {{amount}}đ",

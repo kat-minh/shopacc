@@ -184,7 +184,7 @@
     "powerLevelValue": "PL {{level}}",
     "marketPrice": "Precio de Mercado: {{price}}đ",
     "savePercent": "AHORRA {{percent}}%",
-    "btnBuyNow": "🚀 COMPRAR ESTA CUENTA INSTANTÁNEAMENTE",
+    "btnBuyNow": "COMPRAR ESTA CUENTA INSTANTÁNEAMENTE",
     "btnSoldOut": "ESTA CUENTA YA SE HA VENDIDO",
     "userBalance": "Su saldo: {{balance}}đ",
     "missingBalance": "Falta: {{amount}}đ",

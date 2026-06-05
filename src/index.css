@@ -85,6 +85,11 @@ html[data-theme="light"] .bg-red-950\/90 {
   background-color: rgba(251, 240, 236, 0.9) !important;
 }
 
+html[data-theme="light"] .bg-rose-950,
+html[data-theme="light"] .bg-rose-950\/60 {
+  background-color: rgba(254, 226, 226, 0.9) !important;
+}
+
 html[data-theme="light"] .bg-stone-900,
 html[data-theme="light"] .bg-stone-900\/50,
 html[data-theme="light"] .bg-stone-900\/70,
@@ -157,6 +162,29 @@ html[data-theme="light"] .text-yellow-500 {
   color: #9a6b00 !important;
 }
 
+/* SVG Fill colors for light mode (charts, etc) */
+html[data-theme="light"] .fill-stone-100,
+html[data-theme="light"] .fill-stone-200 {
+  fill: #2f2114 !important;
+}
+
+html[data-theme="light"] .fill-stone-300,
+html[data-theme="light"] .fill-stone-400 {
+  fill: #4a3f35 !important;
+}
+
+html[data-theme="light"] .fill-emerald-200,
+html[data-theme="light"] .fill-emerald-300,
+html[data-theme="light"] .fill-emerald-400 {
+  fill: #1f6b52 !important;
+}
+
+html[data-theme="light"] .fill-rose-200,
+html[data-theme="light"] .fill-rose-300,
+html[data-theme="light"] .fill-rose-400 {
+  fill: #8b3a3a !important;
+}
+
 /* Border colors for light mode */
 html[data-theme="light"] .border-amber-500\/5,
 html[data-theme="light"] .border-amber-500\/10,
@@ -168,7 +196,8 @@ html[data-theme="light"] .border-amber-500\/40,
 html[data-theme="light"] .border-stone-800,
 html[data-theme="light"] .border-stone-900,
 html[data-theme="light"] .border-red-950,
-html[data-theme="light"] .border-rose-900\/60 {
+html[data-theme="light"] .border-rose-900\/60,
+html[data-theme="light"] .border-rose-800 {
   border-color: var(--app-border) !important;
 }
 
