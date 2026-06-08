@@ -5,9 +5,23 @@ interface FooterProps {
   phone: string;
   zalo: string;
   facebook: string;
+  brandName?: string;
+  aboutText?: string;
+  hours?: string;
+  policy?: string;
+  copyright?: string;
 }
 
-export default function Footer({ phone, zalo, facebook }: FooterProps) {
+export default function Footer({
+  phone,
+  zalo,
+  facebook,
+  brandName,
+  aboutText,
+  hours,
+  policy,
+  copyright
+}: FooterProps) {
   const { t } = useTranslation();
   return (
     <footer className="bg-[#1a0202] border-t-4 border-amber-600/60 mt-20 text-stone-300 pb-12 pt-12">
@@ -17,14 +31,14 @@ export default function Footer({ phone, zalo, facebook }: FooterProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="bg-amber-400 text-red-950 px-2.5 py-1 rounded-lg font-black text-sm">
-              HN
+              {brandName ? brandName.split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase() : "HN"}
             </div>
             <h4 className="text-lg font-black text-amber-400 uppercase tracking-widest">
-              {t("header.title")}
+              {brandName || t("header.title")}
             </h4>
           </div>
           <p className="text-xs text-stone-400 leading-relaxed">
-            {t("footer.about")}
+            {aboutText || t("footer.about")}
           </p>
           <div className="flex items-center gap-2 bg-[#2d0505] p-2.5 rounded-lg border border-amber-500/10">
             <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -80,11 +94,11 @@ export default function Footer({ phone, zalo, facebook }: FooterProps) {
             </li>
             <li className="flex items-center gap-2">
               <Facebook className="w-4 h-4 text-blue-500 shrink-0" />
-              <span>{t("footer.fanpage")} <a href={facebook} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Hải Na Gaming Shop</a></span>
+              <span>{t("footer.fanpage")} <a href={facebook} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Fanpage Facebook</a></span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-rose-400">⏱</span>
-              <span>{t("footer.hours")} <strong className="text-stone-200">{t("footer.hoursValue")}</strong></span>
+              <span>{t("footer.hours")} <strong className="text-stone-200">{hours || t("footer.hoursValue")}</strong></span>
             </li>
           </ul>
         </div>
@@ -95,17 +109,17 @@ export default function Footer({ phone, zalo, facebook }: FooterProps) {
             {t("footer.policyTitle")}
           </h4>
           <p className="text-stone-400 text-xs leading-relaxed">
-            {t("footer.policyDesc")}
+            {policy || t("footer.policyDesc")}
           </p>
-          <div className="bg-red-950/40 p-2 rounded-lg border border-red-800/20 text-[10px] text-justify text-stone-500 leading-normal">
-            {t("footer.copyright")}
+          <div className="bg-red-950/40 p-2 rounded-lg border border-red-800/20 text-[10px] text-justify text-stone-500 leading-normal text-wrap">
+            {copyright || t("footer.copyright")}
           </div>
         </div>
 
       </div>
 
       <div className="max-w-7xl mx-auto px-4 mt-10 pt-6 border-t border-amber-950/80 text-center text-xs text-stone-500">
-        <p>{t("footer.footerRights")}</p>
+        <p>© {new Date().getFullYear()} {brandName || "Hải Na Gaming"}. {t("footer.footerRights")}</p>
       </div>
     </footer>
   );

@@ -51,11 +51,20 @@ export default function ProductDetailView({
           {/* LEFT SECTION: IMAGE GALLERIES & HIGH-RES ART */}
           <div className="space-y-4">
             <div className="h-64 sm:h-80 w-full rounded-2xl overflow-hidden border-2 border-amber-500/20 bg-stone-900 relative">
-              <img
-                src={account.imageUrl}
-                alt={account.title}
-                className="w-full h-full object-cover"
-              />
+              {account.imageUrl && account.imageUrl.startsWith("data:") ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-stone-900 to-red-950/50 select-none">
+                  <Gamepad2 className="w-14 h-14 text-amber-500/50 mb-2" />
+                  <span className="text-xs text-stone-500 font-bold uppercase tracking-wide">Game Account</span>
+                </div>
+              ) : (
+                <img
+                  src={account.imageUrl}
+                  alt={account.title}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+              )}
               <div className="absolute top-4 left-4 flex flex-col gap-1.5">
                 <span className="bg-red-800 text-white font-black px-3 py-1 rounded text-xs border border-amber-400">
                   {t("productDetail.accCode", { id: account.id })}
@@ -68,11 +77,17 @@ export default function ProductDetailView({
 
             <div className="flex items-center gap-3 bg-red-950/60 p-4 rounded-2xl border border-amber-500/10">
               <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-800 shrink-0">
-                <img
-                  src={account.avatarUrl}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
+                {account.avatarUrl && !account.avatarUrl.startsWith("data:") ? (
+                  <img
+                    src={account.avatarUrl}
+                    alt="Avatar"
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  />
+                ) : (
+                  <Gamepad2 className="w-6 h-6 text-amber-500/60 m-auto mt-3" />
+                )}
               </div>
               <div>
                 <h5 className="font-extrabold text-amber-200 text-sm">

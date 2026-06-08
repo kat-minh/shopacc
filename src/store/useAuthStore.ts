@@ -18,6 +18,7 @@ export type AppView =
   | "recharge";
 
 interface AuthState {
+  token: string | null;
   currentUser: UserSession;
   isAdmin: boolean;
   activeView: AppView;
@@ -25,7 +26,7 @@ interface AuthState {
   theme: "light" | "dark";
   toggleTheme: () => void;
   syncUser: (user: UserSession, isAdminState: boolean) => void;
-  login: (user: UserSession, isAdminState: boolean) => void;
+  login: (token: string, user: { username: string; balance: number; isAdmin: boolean }) => void;
   logout: () => void;
   setActiveView: (view: AppView) => void;
   setSelectedAccountId: (id: string | null) => void;
@@ -48,14 +49,16 @@ const readStorage = <T>(key: string, fallback: T): T => {
 
 export const useAuthStore = create<AuthState>((set) => {
   // Read initial states from localStorage if available
+  const defaultToken = typeof window !== "undefined" ? window.localStorage.getItem("haina_token") : null;
   const defaultUser = readStorage<UserSession>("haina_user", {
-    username: "hoang_gamer99",
-    balance: 500000,
+    username: "Khách",
+    balance: 0,
   });
   const defaultAdmin = readStorage<boolean>("haina_is_admin", false);
   const defaultTheme = readStorage<"light" | "dark">("haina_theme", "dark");
 
   return {
+    token: defaultToken,
     currentUser: defaultUser,
     isAdmin: defaultAdmin,
     activeView: "home",
@@ -86,28 +89,35 @@ export const useAuthStore = create<AuthState>((set) => {
       set({ currentUser: user, isAdmin: isAdminState });
     },
 
-    login: (user, isAdminState) => {
+    login: (token, user) => {
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("haina_user", JSON.stringify(user));
+        window.localStorage.setItem("haina_token", token);
+        window.localStorage.setItem(
+          "haina_user",
+          JSON.stringify({ username: user.username, balance: user.balance })
+        );
         window.localStorage.setItem(
           "haina_is_admin",
-          JSON.stringify(isAdminState),
+          JSON.stringify(user.isAdmin),
         );
       }
       set({
-        currentUser: user,
-        isAdmin: isAdminState,
-        activeView: isAdminState ? "admin" : "home",
+        token,
+        currentUser: { username: user.username, balance: user.balance },
+        isAdmin: user.isAdmin,
+        activeView: user.isAdmin ? "admin" : "home",
       });
     },
 
     logout: () => {
       const guestUser = { username: "Khách", balance: 0 };
       if (typeof window !== "undefined") {
+        window.localStorage.removeItem("haina_token");
         window.localStorage.setItem("haina_user", JSON.stringify(guestUser));
         window.localStorage.setItem("haina_is_admin", JSON.stringify(false));
       }
       set({
+        token: null,
         currentUser: guestUser,
         isAdmin: false,
         activeView: "home",

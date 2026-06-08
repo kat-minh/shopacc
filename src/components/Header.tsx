@@ -228,7 +228,7 @@ export default function Header({
                   </span>
                   <span className="text-[10px] sm:text-xs font-black text-amber-400 font-mono flex items-center gap-0.5">
                     <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-500 animate-spin-slow shrink-0" />
-                    {currentUser.balance.toLocaleString("vi-VN")}đ
+                    {(currentUser.balance ?? 0).toLocaleString("vi-VN")}đ
                   </span>
                 </div>
 

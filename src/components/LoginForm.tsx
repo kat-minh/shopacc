@@ -10,9 +10,11 @@ import {
   LogIn,
   ArrowLeft,
 } from "lucide-react";
+import { api } from "../api";
 
 interface LoginFormProps {
   onLoginSuccess: (
+    token: string,
     user: { username: string; balance: number },
     isAdmin: boolean,
   ) => void;
@@ -30,36 +32,22 @@ export default function LoginForm({
   const [password, setPassword] = useState<string>("");
   const [balance, setBalance] = useState<number>(500000); // Default dynamic balance
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (role === "admin") {
-      if (password === "admin123") {
-        const adminUser = {
-          username: "HAINA_ADMIN_VIP",
-          balance: 99999999,
-        };
-        onLoginSuccess(adminUser, true);
-      } else {
-        setError(t("loginForm.errAdminPass"));
-      }
-    } else {
-      const cleanUsername = username.trim() || "Hoi_Vien_Haina";
+    setIsLoading(true);
 
-      // Optional check if user exists in registered users
-      const existingUsersStr = localStorage.getItem("haina_registered_users");
-      const existingUsers = existingUsersStr
-        ? JSON.parse(existingUsersStr)
-        : [];
-      const foundUser = existingUsers.find(
-        (u: any) => u.username.toLowerCase() === cleanUsername.toLowerCase(),
-      );
-
-      const normalUser = {
-        username: cleanUsername,
-        balance: foundUser ? foundUser.balance : balance,
-      };
-      onLoginSuccess(normalUser, false);
+    try {
+      const result = await api.post<{ token: string; user: { username: string; balance: number; isAdmin: boolean } }>("/auth/login", {
+        username: role === "admin" ? "admin@example.com" : username.trim(),
+        password: password
+      });
+      onLoginSuccess(result.token, result.user, result.user.isAdmin);
+    } catch (err: any) {
+      setError(err.message || "Đăng nhập thất bại!");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -148,36 +136,36 @@ export default function LoginForm({
                     type="text"
                     placeholder={t("loginForm.customerIdPlaceholder")}
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-bold"
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (error) setError("");
+                    }}
+                    className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-bold disabled:opacity-50"
                     required
+                    disabled={isLoading}
                   />
                 </div>
-                <p className="text-[10px] text-stone-400 mt-1">
-                  {t("loginForm.customerIdHelp")}
-                </p>
               </div>
 
               <div>
                 <label className="block text-xs text-amber-300 font-bold uppercase mb-2">
-                  {t("loginForm.initialBalance")}
+                  Mật khẩu
                 </label>
-                <select
-                  value={balance}
-                  onChange={(e) => setBalance(Number(e.target.value))}
-                  className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 px-4 text-sm text-amber-300 font-black focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                >
-                  <option value={100000}>{t("loginForm.balance100k")}</option>
-                  <option value={500000}>
-                    {t("loginForm.balance500k")}
-                  </option>
-                  <option value={1500000}>
-                    {t("loginForm.balance1500k")}
-                  </option>
-                  <option value={5000000}>
-                    {t("loginForm.balance5000k")}
-                  </option>
-                </select>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-2.5 w-4 h-4 text-rose-300" />
+                  <input
+                    type="password"
+                    placeholder="Nhập mật khẩu..."
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError("");
+                    }}
+                    className="w-full bg-red-950 border border-amber-500/30 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-bold disabled:opacity-50"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </>
           ) : (
@@ -190,7 +178,7 @@ export default function LoginForm({
                   <Shield className="absolute left-3 top-2.5 w-4 h-4 text-red-400" />
                   <input
                     type="text"
-                    value="HAINA_ADMIN_VIP"
+                    value="admin@example.com"
                     disabled
                     className="w-full bg-red-950/40 border border-red-900/40 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-400 font-bold cursor-not-allowed"
                   />
@@ -207,13 +195,17 @@ export default function LoginForm({
                     type="password"
                     placeholder={t("loginForm.adminPasswordPlaceholder")}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-red-950 border border-red-500/30 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-mono tracking-widest"
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError("");
+                    }}
+                    className="w-full bg-red-950 border border-red-500/30 rounded-xl py-2 pl-10 pr-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-mono tracking-widest disabled:opacity-50"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <p className="text-[10px] text-amber-400 font-semibold mt-1.5 flex items-center gap-1">
-                  <Info className="w-3.5 h-3.5" /> {t("loginForm.adminPasswordHelp")}
+                  <Info className="w-3.5 h-3.5" /> Mật khẩu mặc định là admin123 hoặc tương tự.
                 </p>
               </div>
             </>
@@ -237,10 +229,17 @@ export default function LoginForm({
 
             <button
               type="submit"
-              className="bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-3 px-4 rounded-xl text-xs font-black shadow-lg shadow-amber-500/10 flex items-center justify-center gap-1.5 transition"
+              disabled={isLoading}
+              className={`bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-3 px-4 rounded-xl text-xs font-black shadow-lg shadow-amber-500/10 flex items-center justify-center gap-1.5 transition ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              <LogIn className="w-4 h-4" />
-              {t("loginForm.submit")}
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-red-950 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <LogIn className="w-4 h-4" />
+              )}
+              {isLoading ? "Đang xử lý..." : t("loginForm.submit")}
             </button>
           </div>
 

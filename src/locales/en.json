@@ -114,7 +114,8 @@
     "viewDetails": "ACC DETAILS",
     "buyNow": "BUY NOW",
     "outOfStock": "OUT OF STOCK",
-    "stockCount": "Stock: {{count}}"
+    "stockCount": "Stock: {{count}}",
+    "soldCount": "Sold: {{count}}"
   },
   "recharge": {
     "titleRechargeArea": "AUTOMATIC BALANCE RECHARGE AREA",
@@ -217,7 +218,9 @@
     "monthJune": "June",
     "monthMay": "May",
     "showMore": "Show More",
-    "showLess": "Show Less"
+    "showLess": "Show Less",
+    "soldAccounts": "Sold Accounts",
+    "availableAccounts": "Available Accounts"
   },
   "categories": {
     "Tất cả": "All",

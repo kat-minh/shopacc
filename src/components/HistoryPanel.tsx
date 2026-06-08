@@ -35,9 +35,9 @@ export default function HistoryPanel({
 
   const filteredTransactions = transactions.filter((t) => {
     if (filterType === "all") return true;
-    if (filterType === "recharge") return t.type === "card" || t.type === "atm";
+    if (filterType === "recharge") return t.type === "card" || t.type === "atm" || t.type === "recharge_card" || t.type === "recharge_atm";
     if (filterType === "purchase") return t.type === "buy_account";
-    if (filterType === "wheel") return t.type === "wheel_spin";
+    if (filterType === "wheel") return t.type === "wheel_spin" || t.type === "wheel";
     return true;
   });
 
@@ -290,7 +290,7 @@ export default function HistoryPanel({
                       {idx + 1}
                     </td>
                     <td className="px-3 py-3.5">
-                      {tx.type === "card" || tx.type === "atm" ? (
+                      {tx.type === "card" || tx.type === "atm" || tx.type === "recharge_card" || tx.type === "recharge_atm" ? (
                         <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 py-0.5 px-2 rounded font-extrabold block text-center max-w-20">
                           NẠP TIỀN
                         </span>
@@ -308,7 +308,7 @@ export default function HistoryPanel({
                       {tx.description}
                     </td>
                     <td className="px-3 py-3.5 text-right font-black font-sans">
-                      {tx.type === "card" || tx.type === "atm" ? (
+                      {tx.type === "card" || tx.type === "atm" || tx.type === "recharge_card" || tx.type === "recharge_atm" ? (
                         <span className="text-emerald-400">
                           +{tx.amount.toLocaleString()}đ
                         </span>

@@ -1,6 +1,6 @@
 import { GameAccount } from "../data";
 import { useTranslation } from "react-i18next";
-import { Gamepad2, ArrowRight } from "lucide-react";
+import { Gamepad2, ArrowRight, ShoppingBag } from "lucide-react";
 
 interface ProductCardProps {
   key?: string;
@@ -25,12 +25,32 @@ export default function ProductCard({
       <div>
         {/* Top Image Banner Section */}
         <div className="h-36 sm:h-44 w-full bg-stone-900 relative rounded-xl overflow-hidden mb-3">
-          <img
-            src={account.imageUrl}
-            alt={account.title}
-            className="w-full h-full object-cover transition transform hover:scale-105 duration-500 cursor-pointer"
-            onClick={() => onSelect(account)}
-          />
+          {/* Detect large base64 images and show placeholder instead */}
+          {account.imageUrl && account.imageUrl.startsWith("data:") ? (
+            <div
+              className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-stone-900 to-red-950/50 cursor-pointer select-none"
+              onClick={() => onSelect(account)}
+            >
+              <Gamepad2 className="w-10 h-10 text-amber-500/60 mb-1" />
+              <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wide">Game Account</span>
+            </div>
+          ) : (
+            <img
+              src={account.imageUrl}
+              alt={account.title}
+              loading="lazy"
+              className="w-full h-full object-cover transition transform hover:scale-105 duration-500 cursor-pointer"
+              onClick={() => onSelect(account)}
+              onError={(e) => {
+                const target = e.currentTarget;
+                target.style.display = "none";
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.classList.add("flex", "items-center", "justify-center", "bg-gradient-to-br", "from-stone-900", "to-red-950/50");
+                }
+              }}
+            />
+          )}
 
           {/* Platform Badge (Top Left) */}
           <div className="absolute top-2.5 left-2.5">
@@ -56,6 +76,18 @@ export default function ProductCard({
         >
           {account.title}
         </h4>
+
+        {/* Stock & Sold Display Row */}
+        <div className="flex items-center justify-between text-[11px] text-stone-400 font-bold mt-2 border-t border-amber-500/5 pt-2">
+          <div className="flex items-center gap-1.5">
+            <Gamepad2 className="w-3.5 h-3.5 text-amber-500/70" />
+            <span>{t("productCard.stockCount", { count: account.quantity ?? 1 })}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-amber-400/90">
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>{t("productCard.soldCount", { count: account.soldCount ?? Math.floor((account.price % 900) / 15) + 12 })}</span>
+          </div>
+        </div>
 
         {/* Price & Original Price Row */}
         <div className="flex items-center justify-between mt-3">

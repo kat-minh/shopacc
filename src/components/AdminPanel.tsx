@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect } from "react";
 import { GameAccount, Transaction } from "../data";
+import { api } from "../api";
 import {
   Shield,
   Plus,
@@ -26,6 +27,14 @@ import { useToastStore } from "../store/useToastStore";
 interface AdminPanelProps {
   accounts: GameAccount[];
   transactions: Transaction[];
+  dashboardStats?: {
+    totalAccounts: number;
+    availableAccounts: number;
+    totalRevenue: number;
+    totalRecharged: number;
+    monthlyRevenue: Array<{ month: string; revenue: number }>;
+    rechargeMethods: Array<{ method: string; amount: number }>;
+  };
   onAddAccount: (newAcc: GameAccount) => void;
   onDeleteAccount: (id: string) => void;
   onResetShop: () => void;
@@ -53,12 +62,27 @@ interface AdminPanelProps {
   footerPhone: string;
   footerZalo: string;
   footerFacebook: string;
-  onUpdateFooterLinks: (links: { phone: string; zalo: string; facebook: string }) => void;
+  footerBrandName: string;
+  footerAboutText: string;
+  footerHours: string;
+  footerPolicy: string;
+  footerCopyright: string;
+  onUpdateFooterLinks: (links: {
+    phone: string;
+    zalo: string;
+    facebook: string;
+    brandName?: string;
+    aboutText?: string;
+    hours?: string;
+    policy?: string;
+    copyright?: string;
+  }) => void;
 }
 
 export default function AdminPanel({
   accounts,
   transactions,
+  dashboardStats,
   onAddAccount,
   onDeleteAccount,
   onResetShop,
@@ -79,6 +103,11 @@ export default function AdminPanel({
   footerPhone,
   footerZalo,
   footerFacebook,
+  footerBrandName,
+  footerAboutText,
+  footerHours,
+  footerPolicy,
+  footerCopyright,
   onUpdateFooterLinks,
 }: AdminPanelProps) {
   // Navigation & tabs states
@@ -116,9 +145,11 @@ export default function AdminPanel({
   const [title, setTitle] = useState<string>("");
   const [price, setPrice] = useState<number>(90000);
   const [originalPrice, setOriginalPrice] = useState<number>(185000);
-  const [category, setCategory] = useState<string>(
-    "DANH MỤC ACC Android",
-  );
+  const [displayOriginalPrice, setDisplayOriginalPrice] = useState<string>("185.000");
+  const [discount, setDiscount] = useState<number>(10);
+  const [accountFileContent, setAccountFileContent] = useState<string>("");
+  const [accountFileName, setAccountFileName] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
   const [chronoCrystals, setChronoCrystals] = useState<number>(25000);
   const [stars, setStars] = useState<number>(8);
   const [characters, setCharacters] = useState<string>(
@@ -138,6 +169,8 @@ export default function AdminPanel({
   const [editTitle, setEditTitle] = useState("");
   const [editPrice, setEditPrice] = useState(0);
   const [editOriginalPrice, setEditOriginalPrice] = useState(0);
+  const [displayEditOriginalPrice, setDisplayEditOriginalPrice] = useState("");
+  const [editDiscount, setEditDiscount] = useState(10);
   const [editCategory, setEditCategory] = useState("");
   const [editChronoCrystals, setEditChronoCrystals] = useState(0);
   const [editStars, setEditStars] = useState(0);
@@ -149,6 +182,28 @@ export default function AdminPanel({
   const [editQuantity, setEditQuantity] = useState<number>(1);
   const [editImageUrl, setEditImageUrl] = useState<string>("");
   const [editStatus, setEditStatus] = useState<"Available" | "Sold">("Available");
+  const [editAccountFileContent, setEditAccountFileContent] = useState("");
+  const [editAccountFileName, setEditAccountFileName] = useState("");
+  const [accountItems, setAccountItems] = useState<any[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+
+  useEffect(() => {
+    if (selectedAcc) {
+      setLoadingItems(true);
+      api.get<{ data: any[] }>(`/admin/accounts/${selectedAcc.id}/items?limit=10000`)
+        .then((res) => {
+          setAccountItems(res.data || []);
+        })
+        .catch((err: any) => {
+          addToast("Không thể tải danh sách tài khoản: " + err.message, "error");
+        })
+        .finally(() => {
+          setLoadingItems(false);
+        });
+    } else {
+      setAccountItems([]);
+    }
+  }, [selectedAcc, addToast]);
 
   const [notif, setNotif] = useState<string>(
     "",
@@ -213,6 +268,11 @@ export default function AdminPanel({
   const [localPhone, setLocalPhone] = useState(footerPhone);
   const [localZalo, setLocalZalo] = useState(footerZalo);
   const [localFacebook, setLocalFacebook] = useState(footerFacebook);
+  const [localBrandName, setLocalBrandName] = useState(footerBrandName);
+  const [localAboutText, setLocalAboutText] = useState(footerAboutText);
+  const [localHours, setLocalHours] = useState(footerHours);
+  const [localPolicy, setLocalPolicy] = useState(footerPolicy);
+  const [localCopyright, setLocalCopyright] = useState(footerCopyright);
 
   // Synchronize local states when props change
   useEffect(() => {
@@ -225,68 +285,117 @@ export default function AdminPanel({
     setLocalPhone(footerPhone);
     setLocalZalo(footerZalo);
     setLocalFacebook(footerFacebook);
-  }, [tickerNews, atmBank, atmAccountNumber, atmAccountOwner, momoPhone, momoAccountOwner, footerPhone, footerZalo, footerFacebook]);
+    setLocalBrandName(footerBrandName);
+    setLocalAboutText(footerAboutText);
+    setLocalHours(footerHours);
+    setLocalPolicy(footerPolicy);
+    setLocalCopyright(footerCopyright);
+  }, [tickerNews, atmBank, atmAccountNumber, atmAccountOwner, momoPhone, momoAccountOwner, footerPhone, footerZalo, footerFacebook, footerBrandName, footerAboutText, footerHours, footerPolicy, footerCopyright]);
+
+  const handleOriginalPriceChange = (val: string) => {
+    const cleanDigits = val.replace(/\D/g, "");
+    if (!cleanDigits) {
+      setDisplayOriginalPrice("");
+      setOriginalPrice(0);
+      return;
+    }
+    const num = parseInt(cleanDigits, 10);
+    setOriginalPrice(num);
+    setDisplayOriginalPrice(num.toLocaleString("vi-VN"));
+  };
+
+  const handleEditOriginalPriceChange = (val: string) => {
+    const cleanDigits = val.replace(/\D/g, "");
+    if (!cleanDigits) {
+      setDisplayEditOriginalPrice("");
+      setEditOriginalPrice(0);
+      return;
+    }
+    const num = parseInt(cleanDigits, 10);
+    setEditOriginalPrice(num);
+    setDisplayEditOriginalPrice(num.toLocaleString("vi-VN"));
+  };
+
+  const handleDownloadTemplate = () => {
+    const content = "# Dinh dang tài khoan:\n# TaiKhoan|MatKhau\n# hoac\n# TaiKhoan|MatKhau|MaChuyenCode\n\ntaikhoan1@gmail.com|matkhau123\ntaikhoan2@gmail.com|matkhau456|transfercode789\n";
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "template_accounts.txt");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleAddSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!id || !title || !accountUser || !accountPass) {
+    if (!title || !accountFileContent) {
       addToast(
-        "Vui lòng điền các trường bắt buộc: Mã Acc, Tên Tiêu đề, Tài khoản và Mật khẩu!",
+        "Vui lòng điền đầy đủ Tên sản phẩm và tải file tài khoản!",
         "error"
       );
       return;
     }
 
-    const vipCharactersList = characters
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    const detailsList = details
-      .split(",")
-      .map((d) => d.trim())
-      .filter(Boolean);
+    const generatedId = "DBL-" + Math.floor(100000 + Math.random() * 900000);
+    const calculatedPrice = Math.round(originalPrice * (1 - discount / 100));
 
-    const newGameAccount: GameAccount = {
-      id: id.trim().toUpperCase(),
+    // Parse credentials from the uploaded file for frontend state consistency
+    const lines = accountFileContent.split(/\r?\n/).filter(line => line.trim().length > 0 && !line.startsWith("#"));
+    let parsedUser = "File";
+    let parsedPass = "Attached";
+    let parsedTransferCode: string | undefined = undefined;
+
+    if (lines.length > 0) {
+      const parts = lines[0].split("|").map(p => p.trim());
+      if (parts[0]) parsedUser = parts[0];
+      if (parts[1]) parsedPass = parts[1];
+      if (parts[2]) parsedTransferCode = parts[2];
+    }
+
+    const calculatedQty = lines.length || 1;
+
+    const newGameAccount: any = {
+      id: generatedId,
       game: "Dragon Ball Legends",
       category: category,
       title: title.trim(),
-      price: price,
+      price: calculatedPrice,
       originalPrice: originalPrice,
+      discountPercentage: discount,
       imageUrl: imageUrl.trim() || "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
       avatarUrl: imageUrl.trim() || "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
-      quantity: quantity,
+      quantity: calculatedQty,
+      fileContent: accountFileContent, // This will be sent to the API
       stats: {
-        chronoCrystals: chronoCrystals,
-        vipCharacters: vipCharactersList,
-        powerLevel: Math.floor(chronoCrystals / 400) + 10,
-        starsCount: stars,
+        chronoCrystals: 0,
+        vipCharacters: [],
+        powerLevel: 0,
+        starsCount: 0,
         server: "Global (Android & iOS)",
       },
-      details:
-        detailsList.length > 0
-          ? detailsList
-          : ["Giao dịch tự động siêu tốc", "Cam kết an toàn và sạch sẽ"],
+      details: ["Giao dịch tự động siêu tốc", "Cam kết an toàn và sạch sẽ"],
       status: "Available",
       credentials: {
-        username: accountUser.trim(),
-        pass: accountPass.trim(),
-        transferCode: transferCode.trim() || undefined,
+        username: parsedUser,
+        pass: parsedPass,
+        transferCode: parsedTransferCode,
       },
     };
 
     onAddAccount(newGameAccount);
-    setNotif(`Đã đăng bán thành công tài khoản mã ${id}!`);
+    setNotif(`Đã đăng bán thành công tài khoản mã ${generatedId}!`);
     setTimeout(() => setNotif(""), 3000);
 
-    // Reset forms & close modal
-    setId("");
+    // Reset form states & close modal
     setTitle("");
-    setAccountUser("");
-    setAccountPass("");
-    setTransferCode("");
-    setQuantity(15);
+    setDisplayOriginalPrice("185.000");
+    setOriginalPrice(185000);
+    setDiscount(10);
     setImageUrl("");
+    setAccountFileContent("");
+    setAccountFileName("");
     setShowAddForm(false);
   };
 
@@ -295,17 +404,43 @@ export default function AdminPanel({
     setEditTitle(acc.title);
     setEditPrice(acc.price);
     setEditOriginalPrice(acc.originalPrice);
+    setDisplayEditOriginalPrice(acc.originalPrice.toLocaleString("vi-VN"));
+    const calculatedDiscount = acc.originalPrice > 0 
+      ? Math.round((1 - acc.price / acc.originalPrice) * 100) 
+      : 0;
+    setEditDiscount(calculatedDiscount);
     setEditCategory(acc.category);
     setEditChronoCrystals(acc.stats.chronoCrystals || 0);
     setEditStars(acc.stats.starsCount || 0);
     setEditCharacters(acc.stats.vipCharacters?.join(", ") || "");
     setEditDetails(acc.details?.join(", ") || "");
-    setEditAccountUser(acc.credentials.username);
-    setEditAccountPass(acc.credentials.pass);
-    setEditTransferCode(acc.credentials.transferCode || "");
+    setEditAccountUser(acc.credentials?.username || "");
+    setEditAccountPass(acc.credentials?.pass || "");
+    setEditTransferCode(acc.credentials?.transferCode || "");
     setEditStatus(acc.status);
     setEditQuantity(acc.quantity || 1);
     setEditImageUrl(acc.imageUrl || "");
+    setEditAccountFileContent("");
+    setEditAccountFileName("");
+
+    setLoadingItems(true);
+    api.get<{ data: any[] }>(`/admin/accounts/${acc.id}/items?limit=10000`)
+      .then((res) => {
+        const availableItems = (res.data || []).filter((item: any) => item.status === "Available" || !item.isSold);
+        const fileContentString = availableItems.map((item: any) => {
+          if (item.transferCode) {
+            return `${item.username}|${item.password}|${item.transferCode}`;
+          }
+          return `${item.username}|${item.password}`;
+        }).join("\n");
+        setEditAccountFileContent(fileContentString);
+      })
+      .catch((err: any) => {
+        addToast("Không thể tải danh sách tài khoản: " + err.message, "error");
+      })
+      .finally(() => {
+        setLoadingItems(false);
+      });
 
     setSelectedAcc(null); // Close detail modal if open
     setEditingAcc(acc);
@@ -313,44 +448,23 @@ export default function AdminPanel({
 
   const handleEditSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!editId || !editTitle || !editAccountUser || !editAccountPass) {
+    if (!editId || !editTitle) {
       addToast("Vui lòng điền các trường bắt buộc!", "error");
       return;
     }
 
-    const vipCharactersList = editCharacters
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    const detailsList = editDetails
-      .split(",")
-      .map((d) => d.trim())
-      .filter(Boolean);
+    const calculatedPrice = Math.round(editOriginalPrice * (1 - editDiscount / 100));
 
-    const updatedAcc: GameAccount = {
+    const updatedAcc: any = {
       ...editingAcc!,
       id: editId.trim().toUpperCase(),
       category: editCategory,
       title: editTitle.trim(),
-      price: editPrice,
+      price: calculatedPrice,
       originalPrice: editOriginalPrice,
       imageUrl: editImageUrl.trim() || editingAcc!.imageUrl,
       avatarUrl: editImageUrl.trim() || editingAcc!.avatarUrl,
-      quantity: editQuantity,
-      stats: {
-        ...editingAcc!.stats,
-        chronoCrystals: editChronoCrystals,
-        starsCount: editStars,
-        vipCharacters: vipCharactersList,
-        powerLevel: Math.floor(editChronoCrystals / 400) + 10,
-      },
-      details: detailsList.length > 0 ? detailsList : ["Giao dịch tự động"],
-      status: editStatus,
-      credentials: {
-        username: editAccountUser.trim(),
-        pass: editAccountPass.trim(),
-        transferCode: editTransferCode.trim() || undefined,
-      },
+      fileContent: editAccountFileContent,
     };
 
     onEditAccount?.(updatedAcc);
@@ -384,7 +498,7 @@ export default function AdminPanel({
         }
 
         const headers = header.split(sep).map(h => h.trim().toLowerCase());
-        
+
         let importedCount = 0;
         let duplicateCount = 0;
 
@@ -474,13 +588,17 @@ export default function AdminPanel({
   };
 
   // Compute stat metrics
-  const totalRevenue = transactions
-    .filter((tx) => tx.type === "buy_account" || tx.type === "wheel_spin")
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  const totalRevenue = dashboardStats
+    ? dashboardStats.totalRevenue
+    : transactions
+      .filter((tx) => tx.type === "buy_account" || tx.type === "wheel_spin")
+      .reduce((sum, tx) => sum + tx.amount, 0);
 
-  const totalRecharged = transactions
-    .filter((tx) => tx.type === "card" || tx.type === "atm")
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  const totalRecharged = dashboardStats
+    ? dashboardStats.totalRecharged
+    : transactions
+      .filter((tx) => tx.type === "card" || tx.type === "atm")
+      .reduce((sum, tx) => sum + tx.amount, 0);
 
   // Extract unique users list dynamically
   const uniqueUsers = Array.from(new Set(transactions.map((t) => t.username))).filter(Boolean);
@@ -521,7 +639,12 @@ export default function AdminPanel({
       acc.category.toLowerCase().includes(q);
 
     const matchesCategory = accGameFilter === "All" || acc.category === accGameFilter;
-    const matchesStatus = accStatusFilter === "All" || acc.status === accStatusFilter;
+    let matchesStatus = true;
+    if (accStatusFilter === "Available") {
+      matchesStatus = acc.status === "Available" && (acc.quantity === undefined || acc.quantity > 0);
+    } else if (accStatusFilter === "Sold") {
+      matchesStatus = acc.status === "Sold" || acc.quantity === 0;
+    }
 
     // Price range dropdown check
     let matchesPrice = true;
@@ -556,24 +679,40 @@ export default function AdminPanel({
   // --- DASHBOARD DATA PROCESSING ---
   // 1. Monthly Revenue Chart (type: buy_account, wheel_spin)
   const monthlyRevenueData: { [key: string]: number } = {};
-  transactions.forEach((tx) => {
-    if (tx.type === "buy_account" || tx.type === "wheel_spin") {
-      const match = tx.time.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-      const monthKey = match ? `${match[2]}/${match[3]}` : "06/2026";
-      monthlyRevenueData[monthKey] = (monthlyRevenueData[monthKey] || 0) + tx.amount;
-    }
-  });
+  if (dashboardStats?.monthlyRevenue) {
+    dashboardStats.monthlyRevenue.forEach((item) => {
+      monthlyRevenueData[item.month] = item.revenue;
+    });
+  } else {
+    transactions.forEach((tx) => {
+      if (tx.type === "buy_account" || tx.type === "wheel_spin") {
+        const match = tx.time.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        let monthKey = "06/2026";
+        if (match) {
+          const m = match[2].length === 1 ? "0" + match[2] : match[2];
+          monthKey = `${m}/${match[3]}`;
+        }
+        monthlyRevenueData[monthKey] = (monthlyRevenueData[monthKey] || 0) + tx.amount;
+      }
+    });
+  }
 
   // Ensure current and previous months are represented
-  const currentMonthStr = `${new Date().getMonth() + 1}/${new Date().getFullYear()}`;
+  const curMonthVal = new Date().getMonth() + 1;
+  const currentMonthStr = `${curMonthVal < 10 ? "0" + curMonthVal : curMonthVal}/${new Date().getFullYear()}`;
   const prevMonthVal = new Date().getMonth() === 0 ? 12 : new Date().getMonth();
   const prevYearVal = new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear();
-  const prevMonthStr = `${prevMonthVal}/${prevYearVal}`;
+  const prevMonthStr = `${prevMonthVal < 10 ? "0" + prevMonthVal : prevMonthVal}/${prevYearVal}`;
 
   if (Object.keys(monthlyRevenueData).length === 0) {
-    // Seed with mock data for display aesthetics if empty
-    monthlyRevenueData[prevMonthStr] = 850000;
-    monthlyRevenueData[currentMonthStr] = 450000;
+    if (dashboardStats) {
+      monthlyRevenueData[prevMonthStr] = 0;
+      monthlyRevenueData[currentMonthStr] = 0;
+    } else {
+      // Seed with mock data for display aesthetics if empty
+      monthlyRevenueData[prevMonthStr] = 850000;
+      monthlyRevenueData[currentMonthStr] = 450000;
+    }
   } else {
     if (monthlyRevenueData[currentMonthStr] === undefined) monthlyRevenueData[currentMonthStr] = 0;
     if (monthlyRevenueData[prevMonthStr] === undefined) monthlyRevenueData[prevMonthStr] = 0;
@@ -589,32 +728,48 @@ export default function AdminPanel({
 
   // 2. Sales Status Ratio (Available vs. Sold)
   const soldCount = accounts.filter((a) => a.status === "Sold").length;
-  const availableCount = accounts.filter((a) => a.status === "Available").length;
+  const availableCount = dashboardStats ? dashboardStats.availableAccounts : accounts.filter((a) => a.status === "Available").length;
   const maxProductStat = Math.max(soldCount, availableCount, 5);
 
   // 3. Recharge Methods Donut Chart
   let momoSum = 0;
   let bankSum = 0;
   let cardSum = 0;
-  transactions.forEach((tx) => {
-    if (tx.type === "atm") {
-      if (tx.description.toLowerCase().includes("momo")) {
-        momoSum += tx.amount;
-      } else {
-        bankSum += tx.amount;
+  if (dashboardStats?.rechargeMethods) {
+    dashboardStats.rechargeMethods.forEach((item) => {
+      if (item.method === "momo") momoSum = item.amount;
+      else if (item.method === "atm") bankSum = item.amount;
+      else if (item.method === "card") cardSum = item.amount;
+    });
+  } else {
+    transactions.forEach((tx) => {
+      if (tx.type === "atm") {
+        if (tx.description.toLowerCase().includes("momo")) {
+          momoSum += tx.amount;
+        } else {
+          bankSum += tx.amount;
+        }
+      } else if (tx.type === "card") {
+        cardSum += tx.amount;
       }
-    } else if (tx.type === "card") {
-      cardSum += tx.amount;
-    }
-  });
+    });
+  }
 
   // Fallbacks if no data exists
   if (momoSum === 0 && bankSum === 0 && cardSum === 0) {
-    momoSum = 1200000;
-    bankSum = 2500000;
-    cardSum = 800000;
+    if (dashboardStats) {
+      momoSum = 0;
+      bankSum = 0;
+      cardSum = 0;
+    } else {
+      momoSum = 1200000;
+      bankSum = 2500000;
+      cardSum = 800000;
+    }
   }
   const totalRechargeSum = momoSum + bankSum + cardSum;
+
+  const totalAccountsCount = dashboardStats ? dashboardStats.totalAccounts : accounts.length;
 
   return (
     <div className="max-w-6xl mx-auto my-6 space-y-8 text-stone-200">
@@ -648,7 +803,7 @@ export default function AdminPanel({
             Tổng tài khoản đang đăng
           </span>
           <span className="text-xl font-black text-amber-400 font-mono">
-            {accounts.length} nick
+            {totalAccountsCount} nick
           </span>
         </div>
         <div className="bg-[#2c0404] p-4 rounded-2xl border border-amber-500/15">
@@ -656,7 +811,7 @@ export default function AdminPanel({
             Tài khoản còn trống bán
           </span>
           <span className="text-xl font-black text-emerald-400 font-mono">
-            {accounts.filter((a) => a.status === "Available").length} nick
+            {availableCount} nick
           </span>
         </div>
         <div className="bg-[#2c0404] p-4 rounded-2xl border border-amber-500/15">
@@ -1203,17 +1358,6 @@ export default function AdminPanel({
                   >
                     <Plus className="w-3.5 h-3.5" /> Đăng Acc Mới
                   </button>
-                  <label
-                    className="bg-blue-600 hover:bg-blue-500 text-stone-100 py-1 px-3 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 transition cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Import Excel/CSV
-                    <input
-                      type="file"
-                      accept=".csv,.txt,.tsv"
-                      onChange={handleImportFile}
-                      className="hidden"
-                    />
-                  </label>
                 </div>
 
                 {/* Search accounts query */}
@@ -1263,8 +1407,8 @@ export default function AdminPanel({
                     className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-200 font-bold"
                   >
                     <option value="All">Tất cả Trạng thái</option>
-                    <option value="Available">Chưa bán</option>
-                    <option value="Sold">Đã bán</option>
+                    <option value="Available">Còn hàng</option>
+                    <option value="Sold">Hết hàng</option>
                   </select>
                 </div>
                 <div>
@@ -1348,13 +1492,13 @@ export default function AdminPanel({
                                 {acc.price.toLocaleString()}đ
                               </td>
                               <td className="px-3 py-3 text-center">
-                                {acc.status === "Available" ? (
-                                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 py-0.5 px-2 rounded-full text-[10px] font-black inline-block whitespace-nowrap">
-                                    Chưa bán
+                                {acc.status === "Sold" || (acc.quantity !== undefined && acc.quantity <= 0) ? (
+                                  <span className="bg-stone-800 text-stone-400 border border-stone-700 py-0.5 px-2 rounded-full text-[10px] font-black inline-block whitespace-nowrap">
+                                    Hết hàng
                                   </span>
                                 ) : (
-                                  <span className="bg-stone-800 text-stone-400 border border-stone-700 py-0.5 px-2 rounded-full text-[10px] font-black inline-block whitespace-nowrap">
-                                    Đã bán
+                                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 py-0.5 px-2 rounded-full text-[10px] font-black inline-block whitespace-nowrap">
+                                    Còn hàng ({acc.quantity ?? 1})
                                   </span>
                                 )}
                               </td>
@@ -1424,7 +1568,7 @@ export default function AdminPanel({
                   <Settings className="w-4 h-4 text-amber-400" />
                   Chỉnh sửa nội dung trang web
                 </h4>
-                
+
                 {/* Sub-tabs switch */}
                 <div className="flex gap-2">
                   <button
@@ -1457,10 +1601,15 @@ export default function AdminPanel({
                       phone: localPhone,
                       zalo: localZalo,
                       facebook: localFacebook,
+                      brandName: localBrandName,
+                      aboutText: localAboutText,
+                      hours: localHours,
+                      policy: localPolicy,
+                      copyright: localCopyright,
                     });
-                    addToast("Cập nhật thông báo và liên hệ footer thành công!", "success");
+                    addToast("Cập nhật thông báo và toàn bộ thông tin footer thành công!", "success");
                   }}
-                  className="space-y-4"
+                  className="space-y-5"
                 >
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-amber-300 uppercase">
@@ -1470,7 +1619,7 @@ export default function AdminPanel({
                       value={localTicker}
                       onChange={(e) => setLocalTicker(e.target.value)}
                       placeholder="Nhập nội dung thông báo cho trang chủ..."
-                      rows={4}
+                      rows={3}
                       className="w-full bg-red-950/80 border border-amber-500/20 rounded-2xl p-4 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                       required
                     />
@@ -1482,10 +1631,23 @@ export default function AdminPanel({
                   <div className="bg-[#2c0404]/80 p-5 rounded-2xl border border-amber-500/10 space-y-4 mt-4">
                     <div className="border-b border-rose-900/40 pb-2">
                       <h5 className="font-extrabold text-xs uppercase text-amber-300 tracking-wider">
-                        Cấu hình thông tin liên hệ ở Footer & Widgets
+                        Cấu hình thông tin liên hệ & Thương hiệu ở Footer
                       </h5>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                          Tên thương hiệu (Brand Name) *
+                        </label>
+                        <input
+                          type="text"
+                          value={localBrandName}
+                          onChange={(e) => setLocalBrandName(e.target.value)}
+                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
+                          placeholder="Ví dụ: Hải Na Gaming"
+                          required
+                        />
+                      </div>
                       <div>
                         <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
                           Số điện thoại Hotline *
@@ -1501,27 +1663,86 @@ export default function AdminPanel({
                       </div>
                       <div>
                         <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
-                          Đường dẫn Zalo hỗ trợ *
+                          Giờ mở cửa (Working Hours) *
                         </label>
                         <input
                           type="text"
-                          value={localZalo}
-                          onChange={(e) => setLocalZalo(e.target.value)}
+                          value={localHours}
+                          onChange={(e) => setLocalHours(e.target.value)}
                           className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
-                          placeholder="Ví dụ: https://zalo.me/17506391"
+                          placeholder="Ví dụ: 07:00 - 24:00"
                           required
                         />
                       </div>
+                      <div className="sm:col-span-2 lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                            Đường dẫn Zalo hỗ trợ *
+                          </label>
+                          <input
+                            type="text"
+                            value={localZalo}
+                            onChange={(e) => setLocalZalo(e.target.value)}
+                            className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
+                            placeholder="Ví dụ: https://zalo.me/..."
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                            Đường dẫn Facebook Fanpage *
+                          </label>
+                          <input
+                            type="text"
+                            value={localFacebook}
+                            onChange={(e) => setLocalFacebook(e.target.value)}
+                            className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
+                            placeholder="Ví dụ: https://facebook.com/..."
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 pt-2 border-t border-rose-900/20">
                       <div>
                         <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
-                          Đường dẫn Facebook Fanpage *
+                          Giới thiệu Footer (About Text) *
                         </label>
-                        <input
-                          type="text"
-                          value={localFacebook}
-                          onChange={(e) => setLocalFacebook(e.target.value)}
-                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
-                          placeholder="Ví dụ: https://facebook.com/hainagaming"
+                        <textarea
+                          value={localAboutText}
+                          onChange={(e) => setLocalAboutText(e.target.value)}
+                          placeholder="Mô tả ngắn về shop game..."
+                          rows={2}
+                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl p-3 text-xs text-stone-100 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                          Mô tả Điều khoản & Chính sách *
+                        </label>
+                        <textarea
+                          value={localPolicy}
+                          onChange={(e) => setLocalPolicy(e.target.value)}
+                          placeholder="Thông báo về chính sách mua acc..."
+                          rows={2}
+                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl p-3 text-xs text-stone-100 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
+                          Thông tin Bản quyền & Copyright *
+                        </label>
+                        <textarea
+                          value={localCopyright}
+                          onChange={(e) => setLocalCopyright(e.target.value)}
+                          placeholder="Thông tin từ chối liên kết, bản quyền..."
+                          rows={2}
+                          className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl p-3 text-xs text-stone-100 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500"
                           required
                         />
                       </div>
@@ -1561,7 +1782,7 @@ export default function AdminPanel({
                           Cấu hình ví điện tử MOMO
                         </h5>
                       </div>
-                      
+
                       <div className="space-y-3">
                         <div>
                           <label className="block text-[11px] font-bold text-stone-300 uppercase mb-1">
@@ -1801,51 +2022,97 @@ export default function AdminPanel({
               </h4>
             </div>
 
-            <form onSubmit={handleAddSubmit} className="space-y-4 text-xs sm:text-sm max-h-[75vh] overflow-y-auto pr-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Mã Số ACC (Bắt buộc)</label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: DBL-999"
-                    value={id}
-                    onChange={(e) => setId(e.target.value)}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 font-black"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Danh Mục Bán</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2.5 px-3 focus:outline-none text-amber-300 font-bold"
+            <form onSubmit={handleAddSubmit} className="space-y-5 text-xs sm:text-sm max-h-[75vh] overflow-y-auto pr-1">
+              {/* Cate (dropdown of BE options) */}
+              <div>
+                <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Danh Mục Bán</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-bold"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Product name (text) */}
+              <div>
+                <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Tên sản phẩm (Tiêu đề)</label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: ACC SIÊU NGON 50K CRYSTALS..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-bold"
+                  required
+                />
+              </div>
+
+              {/* File account (file.txt + download template button) */}
+              <div className="bg-red-950/40 p-4 rounded-2xl border border-amber-500/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-amber-300 font-bold uppercase tracking-wide">File tài khoản (.txt)</label>
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="text-[10px] text-amber-400 hover:text-amber-300 underline font-bold transition flex items-center gap-1 cursor-pointer"
                   >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                    📥 Tải File Mẫu (.txt)
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-amber-500/30 hover:border-amber-500/60 bg-red-950/60 rounded-xl py-4 px-3 cursor-pointer transition">
+                    <span className="text-stone-300 text-xs font-bold text-center">
+                      {accountFileName ? `📄 ${accountFileName}` : "📁 Chọn file tài khoản (.txt)"}
+                    </span>
+                    <span className="text-[10px] text-stone-500 mt-1">
+                      {accountFileContent ? `Đã đọc ${accountFileContent.split('\n').filter(line => line.trim().length > 0 && !line.startsWith("#")).length} dòng` : "Hệ thống sẽ tự động đếm số lượng tài khoản từ số dòng"}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".txt"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setAccountFileName(file.name);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) {
+                              setAccountFileContent(event.target.result as string);
+                              addToast(`Đã tải file tài khoản thành công!`, "success");
+                            }
+                          };
+                          reader.readAsText(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
 
+              {/* Product media (URL or upload) */}
               <div>
-                <label className="block text-stone-300 font-bold mb-1">Ảnh sản phẩm (URL hoặc tải file lên)</label>
+                <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Ảnh / Video / GIF sản phẩm (URL hoặc tải file lên)</label>
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
                   <div className="sm:col-span-8 space-y-2">
                     <input
                       type="text"
-                      placeholder="Dán đường dẫn ảnh (URL) hoặc tải ảnh lên bên dưới..."
+                      placeholder="Dán đường dẫn ảnh/video/gif (URL) hoặc tải file lên..."
                       value={imageUrl}
                       onChange={(e) => setImageUrl(e.target.value)}
-                      className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 text-xs"
+                      className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 text-xs font-semibold"
                     />
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-stone-400">Hoặc</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*,video/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -1863,141 +2130,60 @@ export default function AdminPanel({
                     </div>
                   </div>
                   <div className="sm:col-span-4 flex justify-center">
-                    <div className="w-20 h-20 rounded-2xl overflow-hidden border border-amber-500/20 bg-stone-900 flex items-center justify-center relative">
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden border border-amber-500/20 bg-stone-900 flex items-center justify-center relative shadow-inner">
                       {imageUrl ? (
-                        <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                        imageUrl.startsWith("data:video/") || imageUrl.includes(".mp4") ? (
+                          <video src={imageUrl} className="w-full h-full object-cover" muted autoPlay loop />
+                        ) : (
+                          <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                        )
                       ) : (
-                        <span className="text-[9px] text-stone-500 text-center px-2">Chưa có ảnh</span>
+                        <span className="text-[9px] text-stone-500 text-center px-2">Chưa có ảnh/video</span>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-stone-300 font-bold mb-1">Tiêu Đề Quảng Cáo (Bắt buộc)</label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: ACC SIÊU NGON 50K CRYSTALS..."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 font-extrabold"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Giá Bán Thực tế (đ)</label>
-                  <input
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-amber-300 font-black"
-                  />
-                </div>
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Giá gốc thị trường (đ)</label>
-                  <input
-                    type="number"
-                    value={originalPrice}
-                    onChange={(e) => setOriginalPrice(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-400 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Số lượng tồn kho</label>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-emerald-400 font-black"
-                    min={1}
-                  />
-                </div>
-              </div>
-
+              {/* Price inputs: Giá gốc & % Giảm */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-stone-300 font-bold mb-1">Chrono Crystals chứa (Gems)</label>
+                  <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Giá gốc thị trường (đ)</label>
                   <input
-                    type="number"
-                    value={chronoCrystals}
-                    onChange={(e) => setChronoCrystals(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-teal-300 font-black"
+                    type="text"
+                    value={displayOriginalPrice}
+                    onChange={(e) => handleOriginalPriceChange(e.target.value)}
+                    className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-mono font-black"
+                    placeholder="Ví dụ: 150.000"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-stone-300 font-bold mb-1">Hạng Sao</label>
+                  <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Phần trăm giảm (%)</label>
                   <input
                     type="number"
-                    value={stars}
-                    onChange={(e) => setStars(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-rose-300 font-bold"
+                    min="0"
+                    max="100"
+                    value={discount}
+                    onChange={(e) => setDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
+                    className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-black"
+                    placeholder="Ví dụ: 10"
+                    required
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-stone-300 font-bold mb-1">Nhân Vật VIP (Phân cách bằng dấu phẩy)</label>
-                <input
-                  type="text"
-                  placeholder="UL Vegito Blue, LL Super Goku"
-                  value={characters}
-                  onChange={(e) => setCharacters(e.target.value)}
-                  className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-stone-300 font-bold mb-1">Mô tả đặc điểm acc (Phân cách bằng dấu phẩy)</label>
-                <textarea
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-300 h-16 text-xs"
-                />
-              </div>
-
-              <div className="bg-red-950/80 p-3 rounded-2xl border border-rose-500/20 space-y-3">
-                <span className="text-[10px] bg-rose-600 text-stone-100 py-0.5 px-2 rounded font-black uppercase">
-                  Thông tin mật đăng nhập
+              {/* Calculated actual selling price box */}
+              <div className="bg-amber-500/10 border border-amber-500/35 rounded-2xl p-3.5">
+                <span className="text-[10px] text-stone-400 uppercase font-black block">Giá bán thực tế (đã giảm)</span>
+                <span className="text-lg font-mono font-black text-amber-300">
+                  {Math.round(originalPrice * (1 - discount / 100)).toLocaleString("vi-VN")} đ
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-stone-300 text-[10px] font-bold mb-1">Tài khoản Gmail *</label>
-                    <input
-                      type="text"
-                      value={accountUser}
-                      onChange={(e) => setAccountUser(e.target.value)}
-                      className="w-full bg-black/40 border border-amber-500/10 rounded-lg py-1.5 px-2 text-xs text-amber-300 font-mono"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-stone-300 text-[10px] font-bold mb-1">Mật khẩu *</label>
-                    <input
-                      type="text"
-                      value={accountPass}
-                      onChange={(e) => setAccountPass(e.target.value)}
-                      className="w-full bg-black/40 border border-amber-500/10 rounded-lg py-1.5 px-2 text-xs text-amber-300 font-mono"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-stone-300 text-[10px] font-bold mb-1">Transfer Code</label>
-                    <input
-                      type="text"
-                      value={transferCode}
-                      onChange={(e) => setTransferCode(e.target.value)}
-                      className="w-full bg-black/40 border border-amber-500/10 rounded-lg py-1.5 px-2 text-xs text-emerald-300 font-mono"
-                    />
-                  </div>
-                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase transition cursor-pointer"
+                className="w-full bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 font-black py-3 px-4 rounded-xl text-xs uppercase tracking-wide transition duration-150 transform active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/15"
               >
                 Lên Sàn Đăng Bán Ngay
               </button>
@@ -2115,123 +2301,90 @@ export default function AdminPanel({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-stone-300 font-bold mb-1">Giá Bán Thực tế (đ)</label>
+                  <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Giá gốc thị trường (đ)</label>
                   <input
-                    type="number"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-amber-300 font-black"
+                    type="text"
+                    value={displayEditOriginalPrice}
+                    onChange={(e) => handleEditOriginalPriceChange(e.target.value)}
+                    className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-mono font-black"
+                    placeholder="Ví dụ: 150.000"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-stone-300 font-bold mb-1">Giá gốc thị trường (đ)</label>
+                  <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Phần trăm giảm (%)</label>
                   <input
                     type="number"
-                    value={editOriginalPrice}
-                    onChange={(e) => setEditOriginalPrice(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-400 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Số lượng tồn kho</label>
-                  <input
-                    type="number"
-                    value={editQuantity}
-                    onChange={(e) => setEditQuantity(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-emerald-400 font-black"
-                    min={0}
+                    min="0"
+                    max="100"
+                    value={editDiscount}
+                    onChange={(e) => setEditDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
+                    className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-black"
+                    placeholder="Ví dụ: 10"
+                    required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Chrono Crystals chứa (Gems)</label>
-                  <input
-                    type="number"
-                    value={editChronoCrystals}
-                    onChange={(e) => setEditChronoCrystals(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-teal-300 font-black"
-                  />
-                </div>
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Hạng Sao</label>
-                  <input
-                    type="number"
-                    value={editStars}
-                    onChange={(e) => setEditStars(Number(e.target.value))}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-rose-300 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-stone-300 font-bold mb-1">Trạng thái bán</label>
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value as "Available" | "Sold")}
-                    className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2.5 px-3 focus:outline-none text-stone-100 font-bold"
-                  >
-                    <option value="Available">Chưa bán (Available)</option>
-                    <option value="Sold">Đã bán (Sold)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-stone-300 font-bold mb-1">Nhân Vật VIP (Phân cách bằng dấu phẩy)</label>
-                <input
-                  type="text"
-                  value={editCharacters}
-                  onChange={(e) => setEditCharacters(e.target.value)}
-                  className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-stone-300 font-bold mb-1">Mô tả đặc điểm acc (Phân cách bằng dấu phẩy)</label>
-                <textarea
-                  value={editDetails}
-                  onChange={(e) => setEditDetails(e.target.value)}
-                  className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-300 h-16 text-xs"
-                />
-              </div>
-
-              <div className="bg-red-950/80 p-3 rounded-2xl border border-rose-500/20 space-y-3">
-                <span className="text-[10px] bg-rose-600 text-stone-100 py-0.5 px-2 rounded font-black uppercase">
-                  Thông tin mật đăng nhập
+              {/* Calculated actual selling price box */}
+              <div className="bg-amber-500/10 border border-amber-500/35 rounded-2xl p-3.5">
+                <span className="text-[10px] text-stone-400 uppercase font-black block">Giá bán thực tế (đã giảm)</span>
+                <span className="text-lg font-mono font-black text-amber-300">
+                  {Math.round(editOriginalPrice * (1 - editDiscount / 100)).toLocaleString("vi-VN")} đ
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-stone-300 text-[10px] font-bold mb-1">Tài khoản Gmail *</label>
+              </div>
+
+              <div className="bg-red-950/80 p-4 rounded-2xl border border-rose-500/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] bg-rose-600 text-stone-100 py-0.5 px-2 rounded font-black uppercase">
+                    Danh sách tài khoản trong kho (Credential Stock)
+                  </span>
+                  <label
+                    title="Lưu ý: Tải lên file mới sẽ ghi đè toàn bộ danh sách tài khoản chưa bán trong kho!"
+                    className="text-[10px] text-amber-400 hover:text-amber-300 underline font-bold cursor-pointer transition"
+                  >
+                    📁 Up file .txt mới
                     <input
-                      type="text"
-                      value={editAccountUser}
-                      onChange={(e) => setEditAccountUser(e.target.value)}
-                      className="w-full bg-black/40 border border-amber-500/10 rounded-lg py-1.5 px-2 text-xs text-amber-300 font-mono"
-                      required
+                      type="file"
+                      accept=".txt"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setEditAccountFileName(file.name);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) {
+                              setEditAccountFileContent(event.target.result as string);
+                              addToast(`Đã tải file tài khoản mới thành công!`, "success");
+                            }
+                          };
+                          reader.readAsText(file);
+                        }
+                      }}
+                      className="hidden"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-stone-300 text-[10px] font-bold mb-1">Mật khẩu *</label>
-                    <input
-                      type="text"
-                      value={editAccountPass}
-                      onChange={(e) => setEditAccountPass(e.target.value)}
-                      className="w-full bg-black/40 border border-amber-500/10 rounded-lg py-1.5 px-2 text-xs text-amber-300 font-mono"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-stone-300 text-[10px] font-bold mb-1">Transfer Code</label>
-                    <input
-                      type="text"
-                      value={editTransferCode}
-                      onChange={(e) => setEditTransferCode(e.target.value)}
-                      className="w-full bg-black/40 border border-amber-500/10 rounded-lg py-1.5 px-2 text-xs text-emerald-300 font-mono"
-                    />
-                  </div>
+                  </label>
                 </div>
+                
+                {loadingItems ? (
+                  <div className="text-center py-4 text-stone-500 text-xs">
+                    Đang tải danh sách tài khoản...
+                  </div>
+                ) : (
+                  <div>
+                    <textarea
+                      value={editAccountFileContent}
+                      onChange={(e) => setEditAccountFileContent(e.target.value)}
+                      placeholder="Tài khoản | Mật khẩu | Mã chuyển code (mỗi tài khoản một dòng)..."
+                      className="w-full bg-black/40 border border-amber-500/10 rounded-lg py-2 px-3 text-xs text-amber-300 font-mono h-32 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                    <p className="text-[10px] text-stone-400 mt-1 italic">
+                      * Định dạng: <strong>TaiKhoan|MatKhau</strong> hoặc <strong>TaiKhoan|MatKhau|MaChuyenCode</strong>. Chỉ chỉnh sửa các tài khoản chưa bán.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <button
@@ -2315,7 +2468,7 @@ export default function AdminPanel({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200"
+            className="bg-[#4d0808] border-2 border-amber-500/40 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative my-8 animate-in fade-in zoom-in duration-200"
           >
             <button
               onClick={() => setSelectedAcc(null)}
@@ -2329,57 +2482,99 @@ export default function AdminPanel({
               <h4 className="font-extrabold uppercase text-sm text-stone-100">Chi tiết sản phẩm</h4>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-amber-500/5">
-                <span className="text-stone-400">Mã Số ACC:</span>
-                <span className="font-mono font-black text-amber-400">{selectedAcc.id}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-amber-500/5">
-                <span className="text-stone-400">Danh Mục:</span>
-                <span className="font-bold text-stone-200">{selectedAcc.category}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-amber-500/5">
-                <span className="text-stone-400">Tiêu đề:</span>
-                <span className="font-semibold text-stone-200 text-right max-w-[65%]">{selectedAcc.title}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-amber-500/5">
-                <span className="text-stone-400">Giá bán:</span>
-                <span className="font-black text-rose-300">{selectedAcc.price.toLocaleString()}đ</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-amber-500/5">
-                <span className="text-stone-400">Trạng thái:</span>
-                <span className="font-bold">
-                  {selectedAcc.status === "Available" ? (
-                    <span className="text-emerald-400">Còn trống (Chưa bán)</span>
-                  ) : (
-                    <span className="text-stone-400">Đã bán</span>
-                  )}
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-amber-500/5">
-                <span className="text-stone-400 font-extrabold text-amber-300">Khách hàng mua:</span>
-                <span className="font-black text-stone-100 uppercase bg-red-950/60 px-2 py-0.5 rounded border border-amber-500/10">
-                  {selectedAcc.status === "Sold" ? getBuyerUsername(selectedAcc.id) : "Chưa bán"}
-                </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* Left Column: Media & Details */}
+              <div className="space-y-4">
+                {selectedAcc.imageUrl && (
+                  <div className="w-full h-44 rounded-2xl overflow-hidden border border-amber-500/20 bg-stone-900 flex items-center justify-center relative">
+                    {selectedAcc.imageUrl.startsWith("data:video/") || selectedAcc.imageUrl.includes(".mp4") ? (
+                      <video src={selectedAcc.imageUrl} className="w-full h-full object-cover" muted autoPlay loop />
+                    ) : (
+                      <img src={selectedAcc.imageUrl} className="w-full h-full object-cover" alt={selectedAcc.title} />
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-3 text-xs bg-black/20 p-4 rounded-2xl border border-amber-500/5">
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Mã Số ACC:</span>
+                    <span className="font-mono font-black text-amber-400">{selectedAcc.id}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Danh Mục:</span>
+                    <span className="font-bold text-stone-200">{selectedAcc.category}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Tiêu đề:</span>
+                    <span className="font-semibold text-stone-200 text-right max-w-[65%]">{selectedAcc.title}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Giá gốc:</span>
+                    <span className="font-semibold text-stone-400 line-through">{selectedAcc.originalPrice.toLocaleString()}đ</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Giá bán:</span>
+                    <span className="font-black text-rose-300">{selectedAcc.price.toLocaleString()}đ</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Giảm giá:</span>
+                    <span className="font-black text-emerald-400">
+                      {selectedAcc.originalPrice > 0 
+                        ? Math.round((1 - selectedAcc.price / selectedAcc.originalPrice) * 100) 
+                        : 0}%
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* Secure Credentials Data */}
-              <div className="bg-red-950/40 p-3 rounded-xl border border-rose-500/20 space-y-1.5 mt-2">
-                <span className="text-[10px] text-stone-400 uppercase font-black tracking-widest block mb-1">
-                  Thông tin bảo mật đăng nhập
+              {/* Right Column: Credentials Stock List */}
+              <div className="bg-[#2c0404]/85 p-4 rounded-3xl border border-amber-500/15 space-y-3">
+                <span className="text-[10px] text-amber-300 uppercase font-black tracking-widest block border-b border-amber-500/10 pb-1.5">
+                  Danh sách tài khoản trong kho ({accountItems.length})
                 </span>
-                <div>
-                  <span className="text-[9px] text-stone-400 font-semibold block">Tài khoản:</span>
-                  <code className="text-amber-300 font-mono font-bold select-all text-xs block bg-black/40 p-1 rounded mt-0.5">{selectedAcc.credentials.username}</code>
-                </div>
-                <div>
-                  <span className="text-[9px] text-stone-400 font-semibold block">Mật khẩu:</span>
-                  <code className="text-amber-300 font-mono font-bold select-all text-xs block bg-black/40 p-1 rounded mt-0.5">{selectedAcc.credentials.pass}</code>
-                </div>
-                {selectedAcc.credentials.transferCode && (
-                  <div>
-                    <span className="text-[9px] text-stone-400 font-semibold block">Transfer Code:</span>
-                    <code className="text-emerald-300 font-mono font-bold select-all text-xs block bg-black/40 p-1 rounded mt-0.5">{selectedAcc.credentials.transferCode}</code>
+                
+                {loadingItems ? (
+                  <div className="text-center py-6 text-stone-500 text-xs">
+                    Đang tải danh sách tài khoản...
+                  </div>
+                ) : accountItems.length === 0 ? (
+                  <div className="text-center py-6 text-stone-500 text-xs italic">
+                    Chưa có tài khoản nào trong kho.
+                  </div>
+                ) : (
+                  <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1">
+                    {accountItems.map((item, idx) => (
+                      <div key={item.itemId || idx} className="bg-black/40 p-2.5 rounded-xl border border-amber-500/5 space-y-1 relative text-[11px]">
+                        <div className="flex justify-between items-center">
+                          <span className="text-stone-400 font-mono font-bold">#{idx + 1}</span>
+                          <span className={`py-0.5 px-2 rounded-full text-[9px] font-black uppercase ${
+                            item.isSold 
+                              ? "bg-stone-800 text-stone-400 border border-stone-700" 
+                              : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          }`}>
+                            {item.isSold ? "Đã bán" : "Còn hàng"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-stone-500">Tài khoản:</span> <code className="text-amber-300 font-bold select-all bg-black/40 px-1 rounded">{item.username}</code>
+                        </div>
+                        {item.password && (
+                          <div>
+                            <span className="text-stone-500">Mật khẩu:</span> <code className="text-amber-300 font-bold select-all bg-black/40 px-1 rounded">{item.password}</code>
+                          </div>
+                        )}
+                        {item.transferCode && (
+                          <div>
+                            <span className="text-stone-500">Mã chuyển:</span> <code className="text-emerald-300 font-bold select-all bg-black/40 px-1 rounded">{item.transferCode}</code>
+                          </div>
+                        )}
+                        {item.soldAt && (
+                          <div className="text-[9px] text-stone-500 italic">
+                            Bán lúc: {new Date(item.soldAt).toLocaleString("vi-VN")}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

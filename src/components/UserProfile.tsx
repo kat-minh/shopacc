@@ -54,7 +54,7 @@ export default function UserProfile({ onBack }: UserProfileProps) {
                   {t("userProfile.currentBalance")}
                 </span>
                 <span className="text-sm font-bold text-stone-100">
-                  {currentUser.balance.toLocaleString("vi-VN")}đ
+                  {(currentUser.balance ?? 0).toLocaleString("vi-VN")}đ
                 </span>
               </div>
             </div>

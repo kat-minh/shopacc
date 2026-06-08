@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { User, KeyRound, LogIn, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
+import { api } from "../api";
 
 interface RegisterFormProps {
   onCancel: () => void;
@@ -17,7 +18,7 @@ export default function RegisterForm({ onCancel }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -27,8 +28,8 @@ export default function RegisterForm({ onCancel }: RegisterFormProps) {
       return;
     }
 
-    if (password.length < 4) {
-      setError(t("registerForm.errPasswordLength"));
+    if (password.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự.");
       return;
     }
 
@@ -37,34 +38,24 @@ export default function RegisterForm({ onCancel }: RegisterFormProps) {
       return;
     }
 
-    // Retrieve existing accounts
-    const existingUsersStr = localStorage.getItem("haina_registered_users");
-    const existingUsers = existingUsersStr ? JSON.parse(existingUsersStr) : [];
+    try {
+      // Register
+      await api.post("/auth/register", {
+        username: cleanUsername,
+        password: password,
+      });
 
-    // Check if user already exists
-    if (
-      existingUsers.some(
-        (u: any) => u.username.toLowerCase() === cleanUsername.toLowerCase(),
-      )
-    ) {
-      setError(t("registerForm.errUserExists"));
-      return;
+      // Automatically log in
+      const loginResult = await api.post<{ token: string; user: { username: string; balance: number; isAdmin: boolean } }>("/auth/login", {
+        username: cleanUsername,
+        password: password,
+      });
+
+      login(loginResult.token, loginResult.user);
+      navigate("/");
+    } catch (err: any) {
+      setError(err.message || "Đăng ký thất bại!");
     }
-
-    // Save user
-    const newUser = {
-      username: cleanUsername,
-      password: password,
-      balance: 500000, // default mock balance
-    };
-    existingUsers.push(newUser);
-    localStorage.setItem(
-      "haina_registered_users",
-      JSON.stringify(existingUsers),
-    );
-
-    // Automatically log in
-    login({ username: cleanUsername, balance: 500000 }, false);
   };
 
   const isLightTheme = typeof document !== "undefined" && document.documentElement.dataset.theme === "light";

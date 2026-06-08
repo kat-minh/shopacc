@@ -19,6 +19,7 @@ export interface GameAccount {
   details: string[];
   status: "Available" | "Sold";
   quantity?: number;
+  soldCount?: number;
   credentials: {
     username: string;
     pass: string;
@@ -101,6 +102,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       "Đại lý uy tín, bảo hành hồi phục tài khoản",
     ],
     status: "Available",
+    soldCount: 142,
     credentials: {
       username: "sale_reroll_01",
       pass: "god_goku_crystals_999",
@@ -131,6 +133,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       "Sạch bóng, không nạp bẩn, bảo hành trọn đời",
     ],
     status: "Available",
+    soldCount: 89,
     credentials: {
       username: "meta_legend_902",
       pass: "gogetablue8888",
@@ -166,6 +169,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       "Chỉ cần đăng nhập và leo hạng PVP thế giới",
     ],
     status: "Available",
+    soldCount: 14,
     credentials: {
       username: "vip_owner_shop_001",
       pass: "vegitoredstar_gg",
@@ -203,6 +207,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       "Bàn giao nguyên bản, bảo mật email tuyệt đối",
     ],
     status: "Available",
+    soldCount: 3,
     credentials: {
       username: "gamers_destiny_top",
       pass: "gamers_goku_legend1",

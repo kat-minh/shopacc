@@ -114,7 +114,8 @@
     "viewDetails": "DETALLES ACC",
     "buyNow": "COMPRAR YA",
     "outOfStock": "SIN STOCK",
-    "stockCount": "Stock: {{count}}"
+    "stockCount": "Stock: {{count}}",
+    "soldCount": "Vendidos: {{count}}"
   },
   "recharge": {
     "titleRechargeArea": "ÁREA DE RECARGA AUTOMÁTICA DE SALDO",

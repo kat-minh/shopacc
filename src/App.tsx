@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "./api";
 import {
   GameAccount,
   LuckyWheelGame,
@@ -100,6 +102,7 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const {
+    token,
     currentUser,
     isAdmin,
     activeView,
@@ -117,6 +120,135 @@ export default function App() {
   const [categories, setCategories] = useState<string[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [boughtAccounts, setBoughtAccounts] = useState<GameAccount[]>([]);
+
+  const queryClient = useQueryClient();
+
+  // 1. Get available accounts
+  const { data: apiAccounts } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: () => api.get<GameAccount[]>("/accounts"),
+  });
+
+  // 2. Get user me details
+  const { data: userMe } = useQuery({
+    queryKey: ["userMe", token],
+    queryFn: () => api.get<{ username: string; balance: number; isAdmin: boolean }>("/auth/me"),
+    enabled: !!token,
+  });
+
+  // 3. Get user bought accounts (kho đồ)
+  const { data: apiBought } = useQuery({
+    queryKey: ["boughtAccounts", token],
+    queryFn: () => api.get<{ data: GameAccount[] }>("/user/bought-accounts"),
+    enabled: !!token,
+  });
+
+  // 4. Get transactions
+  const { data: apiTransactions } = useQuery({
+    queryKey: ["transactions", token, isAdmin],
+    queryFn: () => {
+      if (isAdmin) {
+        return api.get<{ data: Transaction[] }>("/admin/transactions?limit=1000");
+      }
+      return api.get<{ data: Transaction[] }>("/user/transactions");
+    },
+    enabled: !!token,
+  });
+
+  // 5. Get admin dashboard stats
+  const { data: adminDashboardStats } = useQuery({
+    queryKey: ["adminDashboardStats", token, isAdmin],
+    queryFn: () => api.get<any>("/admin/dashboard"),
+    enabled: !!token && isAdmin,
+  });
+
+  // 6. Get categories
+  const { data: apiCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.get<{ id: string; name: string; game: string }[]>("/categories"),
+  });
+
+  // 7. Get system settings (web content config)
+  const { data: apiSettings } = useQuery({
+    queryKey: ["systemSettings"],
+    queryFn: () => api.get<{
+      tickerNews: string;
+      atmBank: string;
+      atmAccountNumber: string;
+      atmAccountOwner: string;
+      momoPhone: string;
+      momoAccountOwner: string;
+      footerPhone: string;
+      footerZalo: string;
+      footerFacebook: string;
+      footerBrandName: string;
+      footerAboutText: string;
+      footerHours: string;
+      footerPolicy: string;
+      footerCopyright: string;
+    }>("/settings"),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Sync userMe data to store
+  useEffect(() => {
+    if (userMe) {
+      syncUser({ username: userMe.username, balance: userMe.balance }, userMe.isAdmin);
+    }
+  }, [userMe, syncUser]);
+
+  // Sync accounts from API
+  useEffect(() => {
+    if (apiAccounts) {
+      const mapped = apiAccounts.map((acc: any) => ({
+        ...acc,
+        quantity: acc.stock,
+        status: acc.stock > 0 ? "Available" : "Sold",
+      }));
+      setAccounts(mapped);
+    }
+  }, [apiAccounts]);
+
+  // Sync categories from API
+  useEffect(() => {
+    if (apiCategories) {
+      setCategories(apiCategories.map((c) => c.name));
+    }
+  }, [apiCategories]);
+
+  // Sync bought accounts
+  useEffect(() => {
+    if (apiBought?.data) {
+      setBoughtAccounts(apiBought.data);
+    }
+  }, [apiBought]);
+
+  // Sync transactions
+  useEffect(() => {
+    if (apiTransactions?.data) {
+      setTransactions(apiTransactions.data);
+    }
+  }, [apiTransactions]);
+
+  // Sync system settings from API (overrides localStorage defaults)
+  useEffect(() => {
+    if (apiSettings) {
+      if (apiSettings.tickerNews) setTickerNews(apiSettings.tickerNews);
+      if (apiSettings.atmBank) setAtmBank(apiSettings.atmBank);
+      if (apiSettings.atmAccountNumber) setAtmAccountNumber(apiSettings.atmAccountNumber);
+      if (apiSettings.atmAccountOwner) setAtmAccountOwner(apiSettings.atmAccountOwner);
+      if (apiSettings.momoPhone) setMomoPhone(apiSettings.momoPhone);
+      if (apiSettings.momoAccountOwner) setMomoAccountOwner(apiSettings.momoAccountOwner);
+      if (apiSettings.footerPhone) setFooterPhone(apiSettings.footerPhone);
+      if (apiSettings.footerZalo) setFooterZalo(apiSettings.footerZalo);
+      if (apiSettings.footerFacebook) setFooterFacebook(apiSettings.footerFacebook);
+      if (apiSettings.footerBrandName) setFooterBrandName(apiSettings.footerBrandName);
+      if (apiSettings.footerAboutText) setFooterAboutText(apiSettings.footerAboutText);
+      if (apiSettings.footerHours) setFooterHours(apiSettings.footerHours);
+      if (apiSettings.footerPolicy) setFooterPolicy(apiSettings.footerPolicy);
+      if (apiSettings.footerCopyright) setFooterCopyright(apiSettings.footerCopyright);
+    }
+  }, [apiSettings]);
 
   // Filtering states in the Home Catalog
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
@@ -185,6 +317,11 @@ export default function App() {
   const [footerPhone, setFooterPhone] = useState<string>("0399.88.11.22");
   const [footerZalo, setFooterZalo] = useState<string>("https://zalo.me/17506391");
   const [footerFacebook, setFooterFacebook] = useState<string>("https://facebook.com/hainagaming");
+  const [footerBrandName, setFooterBrandName] = useState<string>("Hải Na Gaming");
+  const [footerAboutText, setFooterAboutText] = useState<string>("Siêu thị Account Reroll Dragon Ball Legends tự động số 1 Việt Nam. Uy tín, chất lượng và an toàn bảo mật tuyệt đối.");
+  const [footerHours, setFooterHours] = useState<string>("07:00 - 24:00 (Cả CN & Ngày lễ)");
+  const [footerPolicy, setFooterPolicy] = useState<string>("Hệ thống giao dịch hoàn toàn tự động 24/7. Vui lòng đọc kỹ điều khoản mua acc trước khi thanh toán.");
+  const [footerCopyright, setFooterCopyright] = useState<string>("Hainagaming.com không liên kết trực tiếp với Bandai Namco. Bản quyền game thuộc về chủ sở hữu.");
 
   // Load and bootstrap initial state from local storage securely
   useEffect(() => {
@@ -286,6 +423,21 @@ export default function App() {
     const savedFb = localStorage.getItem("haina_footer_fb");
     if (savedFb) setFooterFacebook(savedFb);
 
+    const savedBrand = localStorage.getItem("haina_footer_brand");
+    if (savedBrand) setFooterBrandName(savedBrand);
+
+    const savedAbout = localStorage.getItem("haina_footer_about");
+    if (savedAbout) setFooterAboutText(savedAbout);
+
+    const savedHours = localStorage.getItem("haina_footer_hours");
+    if (savedHours) setFooterHours(savedHours);
+
+    const savedPolicy = localStorage.getItem("haina_footer_policy");
+    if (savedPolicy) setFooterPolicy(savedPolicy);
+
+    const savedCopyright = localStorage.getItem("haina_footer_copyright");
+    if (savedCopyright) setFooterCopyright(savedCopyright);
+
     setIsBootstrapped(true);
   }, []);
 
@@ -362,6 +514,14 @@ export default function App() {
 
   useEffect(() => {
     const routeView = pathToView(location.pathname);
+    const isGuest = currentUser.username === "Khách";
+    const protectedViews: AppView[] = ["profile", "change-password", "user-history", "history", "admin", "recharge"];
+
+    if (isGuest && protectedViews.includes(routeView)) {
+      setActiveView("login");
+      navigate("/login");
+      return;
+    }
 
     if (isAdmin) {
       if (routeView !== "admin") {
@@ -398,10 +558,11 @@ export default function App() {
   };
 
   const handleLoginSuccess = (
+    token: string,
     user: { username: string; balance: number },
     adminState: boolean,
   ) => {
-    login(user, adminState);
+    login(token, { ...user, isAdmin: adminState });
     navigate(adminState ? "/admin" : "/");
   };
 
@@ -435,35 +596,22 @@ export default function App() {
     serial: string,
     pin: string,
   ): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const addedBalance = amount;
-        const updated = {
-          ...currentUser,
-          balance: currentUser.balance + addedBalance,
-        };
-        syncUser(updated, isAdmin);
-
-        const newTx: Transaction = {
-          id: "CARD-" + Date.now().toString().slice(-8),
-          type: "card",
-          username: currentUser.username,
-          amount: addedBalance,
-          description: `Thẻ cào ${provider} mệnh giá ${amount.toLocaleString("vi-VN")}đ (Serial: ${serial.slice(0, 4)}***, Pin: ${pin.slice(0, 4)}***)`,
-          status: "Success",
-          time:
-            new Date().toLocaleTimeString("vi-VN") +
-            " " +
-            new Date().toLocaleDateString("vi-VN"),
-        };
-
-        const updatedTxs = [newTx, ...transactions];
-        setTransactions(updatedTxs);
-        localStorage.setItem("haina_transactions", JSON.stringify(updatedTxs));
-
-        resolve(true);
-      }, 1500);
-    });
+    try {
+      const result = await api.post<{ message: string; status: string }>("/recharge/card", {
+        provider,
+        amount,
+        serial,
+        pin,
+      });
+      addToast(result.message || "Gửi thẻ cào thành công và đang chờ xử lý!", "success");
+      
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["userMe"] });
+      return true;
+    } catch (err: any) {
+      addToast(err.message || "Gạch thẻ thất bại!", "error");
+      return false;
+    }
   };
 
   // Product Purchase logic
@@ -493,68 +641,27 @@ export default function App() {
     setIsConfirmOpen(true);
   };
 
-  const executeBuyAccount = () => {
+  const executeBuyAccount = async () => {
     if (!pendingAccountToBuy) return;
     const account = pendingAccountToBuy;
-    const quantityToBuy = pendingQtyToBuy;
-    const totalCost = account.price * quantityToBuy;
+    try {
+      const result = await api.post<{ message: string; account: any }>(`/accounts/${account.id}/buy`);
+      
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["userMe"] });
+      queryClient.invalidateQueries({ queryKey: ["boughtAccounts"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
 
-    // Process payment
-    const updatedUser = {
-      ...currentUser,
-      balance: currentUser.balance - totalCost,
-    };
-    syncUser(updatedUser, isAdmin);
-
-    // Update account inventory state
-    const updatedAccounts = accounts.map((acc) => {
-      if (acc.id === account.id) {
-        const newQty = Math.max(0, (acc.quantity ?? 1) - quantityToBuy);
-        return {
-          ...acc,
-          quantity: newQty,
-          status: newQty <= 0 ? ("Sold" as const) : ("Available" as const),
-        };
-      }
-      return acc;
-    });
-    setAccounts(updatedAccounts);
-    localStorage.setItem("haina_accounts", JSON.stringify(updatedAccounts));
-
-    // Log transaction history
-    const newTx: Transaction = {
-      id: "BUY-" + account.id + "-" + Date.now().toString().slice(-4),
-      type: "buy_account",
-      username: currentUser.username,
-      amount: totalCost,
-      description: `Mua ${quantityToBuy}x Tài Khoản mã số ${account.id} - ${account.title.slice(0, 30)}...`,
-      status: "Success",
-      time:
-        new Date().toLocaleTimeString("vi-VN") +
-        " " +
-        new Date().toLocaleDateString("vi-VN"),
-    };
-    const updatedTxs = [newTx, ...transactions];
-    setTransactions(updatedTxs);
-    localStorage.setItem("haina_transactions", JSON.stringify(updatedTxs));
-
-    // Append to bought accounts
-    const boughtRecord: GameAccount = {
-      ...account,
-      quantity: quantityToBuy,
-    };
-    const updatedBought = [boughtRecord, ...boughtAccounts];
-    setBoughtAccounts(updatedBought);
-    localStorage.setItem(
-      "haina_bought_accounts",
-      JSON.stringify(updatedBought),
-    );
-
-    addToast(`Mua thành công ${quantityToBuy}x tài khoản mã số ${account.id}!`, "success");
-    setCheckoutReceipt(boughtRecord);
-    setIsConfirmOpen(false);
-    setPendingAccountToBuy(null);
-    setPendingQtyToBuy(1);
+      addToast(result.message || `Mua thành công tài khoản mã số ${account.id}!`, "success");
+      setCheckoutReceipt(result.account);
+      setIsConfirmOpen(false);
+      setPendingAccountToBuy(null);
+      setPendingQtyToBuy(1);
+    } catch (err: any) {
+      addToast(err.message || "Giao dịch thất bại!", "error");
+      setIsConfirmOpen(false);
+    }
   };
 
   // Lucky Wheel Prize handler callback
@@ -593,93 +700,203 @@ export default function App() {
   };
 
   // Admin Account additions
-  const handleAddAccountAdmin = (newAcc: GameAccount) => {
-    const updated = [newAcc, ...accounts];
-    setAccounts(updated);
-    localStorage.setItem("haina_accounts", JSON.stringify(updated));
+  const handleAddAccountAdmin = async (newAcc: GameAccount) => {
+    try {
+      const payload = {
+        category: newAcc.category,
+        title: newAcc.title,
+        price: newAcc.price,
+        originalPrice: newAcc.originalPrice,
+        imageUrl: newAcc.imageUrl,
+        avatarUrl: newAcc.avatarUrl,
+        fileContent: (newAcc as any).fileContent,
+      };
+      await api.post("/admin/accounts", payload);
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
+      addToast("Thêm tài khoản thành công!", "success");
+    } catch (err: any) {
+      addToast(err.message || "Thêm thất bại!", "error");
+    }
   };
 
   // Admin Account deletions
-  const handleDeleteAccountAdmin = (id: string) => {
-    const updated = accounts.filter((acc) => acc.id !== id);
-    setAccounts(updated);
-    localStorage.setItem("haina_accounts", JSON.stringify(updated));
+  const handleDeleteAccountAdmin = async (id: string) => {
+    try {
+      await api.delete(`/admin/accounts/${id}`);
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
+      addToast("Xóa tài khoản thành công!", "success");
+    } catch (err: any) {
+      addToast(err.message || "Xóa thất bại!", "error");
+    }
   };
 
   // Admin Account updates
-  const handleEditAccountAdmin = (updatedAcc: GameAccount) => {
-    const updated = accounts.map((acc) =>
-      acc.id === updatedAcc.id ? updatedAcc : acc,
-    );
-    setAccounts(updated);
-    localStorage.setItem("haina_accounts", JSON.stringify(updated));
+  const handleEditAccountAdmin = async (updatedAcc: GameAccount) => {
+    try {
+      await api.put(`/admin/accounts/${updatedAcc.id}`, updatedAcc);
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
+      addToast("Cập nhật tài khoản thành công!", "success");
+    } catch (err: any) {
+      addToast(err.message || "Cập nhật thất bại!", "error");
+    }
   };
 
-  const handleAddCategory = (newCat: string) => {
+  const handleAddCategory = async (newCat: string) => {
     const trimmed = newCat.trim();
-    if (!trimmed || categories.includes(trimmed)) return;
-    const updated = [...categories, trimmed];
-    setCategories(updated);
-    localStorage.setItem("haina_categories", JSON.stringify(updated));
-    addToast(`Đã thêm danh mục "${trimmed}" thành công!`, "success");
+    if (!trimmed) return;
+    try {
+      await api.post("/admin/categories", { name: trimmed });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      addToast(`Đã thêm danh mục "${trimmed}" thành công!`, "success");
+    } catch (err: any) {
+      addToast(err.message || "Thêm danh mục thất bại!", "error");
+    }
   };
 
-  const handleEditCategory = (oldCat: string, newCat: string) => {
+  const handleEditCategory = async (oldCat: string, newCat: string) => {
     const trimmedOld = oldCat.trim();
     const trimmedNew = newCat.trim();
     if (!trimmedNew || trimmedOld === trimmedNew) return;
 
-    const updatedCats = categories.map(c => c === trimmedOld ? trimmedNew : c);
-    setCategories(updatedCats);
-    localStorage.setItem("haina_categories", JSON.stringify(updatedCats));
-
-    const updatedAccounts = accounts.map(acc => {
-      if (acc.category === trimmedOld) {
-        return { ...acc, category: trimmedNew };
+    try {
+      const cat = apiCategories?.find(c => c.name === trimmedOld);
+      if (!cat) {
+        addToast("Không tìm thấy danh mục để chỉnh sửa!", "error");
+        return;
       }
-      return acc;
-    });
-    setAccounts(updatedAccounts);
-    localStorage.setItem("haina_accounts", JSON.stringify(updatedAccounts));
-
-    addToast(`Đã đổi tên danh mục thành "${trimmedNew}"!`, "success");
+      await api.put(`/admin/categories/${cat.id}`, { name: trimmedNew });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      addToast(`Đã đổi tên danh mục thành "${trimmedNew}"!`, "success");
+    } catch (err: any) {
+      addToast(err.message || "Cập nhật danh mục thất bại!", "error");
+    }
   };
 
-  const handleDeleteCategory = (catToDelete: string) => {
+  const handleDeleteCategory = async (catToDelete: string) => {
     const trimmed = catToDelete.trim();
-    const updated = categories.filter(c => c !== trimmed);
-    setCategories(updated);
-    localStorage.setItem("haina_categories", JSON.stringify(updated));
-
-    const fallbackCategory = updated[0] || "DANH MỤC ACC Android";
-    const updatedAccounts = accounts.map(acc => {
-      if (acc.category === trimmed) {
-        return { ...acc, category: fallbackCategory };
+    try {
+      const cat = apiCategories?.find(c => c.name === trimmed);
+      if (!cat) {
+        addToast("Không tìm thấy danh mục để xóa!", "error");
+        return;
       }
-      return acc;
-    });
-    setAccounts(updatedAccounts);
-    localStorage.setItem("haina_accounts", JSON.stringify(updatedAccounts));
-
-    addToast(`Đã xóa danh mục "${trimmed}" thành công!`, "success");
+      await api.delete(`/admin/categories/${cat.id}`);
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      addToast(`Đã xóa danh mục "${trimmed}" thành công!`, "success");
+    } catch (err: any) {
+      addToast(err.message || "Xóa danh mục thất bại!", "error");
+    }
   };
 
-  // Web content updates
-  const handleUpdateTickerNews = (text: string) => {
+  // Helper: persist all current settings to the backend API
+  const persistSettingsToApi = async (patch: Partial<{
+    tickerNews: string;
+    atmBank: string;
+    atmAccountNumber: string;
+    atmAccountOwner: string;
+    momoPhone: string;
+    momoAccountOwner: string;
+    footerPhone: string;
+    footerZalo: string;
+    footerFacebook: string;
+    footerBrandName: string;
+    footerAboutText: string;
+    footerHours: string;
+    footerPolicy: string;
+    footerCopyright: string;
+  }>) => {
+    try {
+      await api.put("/settings", {
+        tickerNews: patch.tickerNews ?? tickerNews,
+        atmBank: patch.atmBank ?? atmBank,
+        atmAccountNumber: patch.atmAccountNumber ?? atmAccountNumber,
+        atmAccountOwner: patch.atmAccountOwner ?? atmAccountOwner,
+        momoPhone: patch.momoPhone ?? momoPhone,
+        momoAccountOwner: patch.momoAccountOwner ?? momoAccountOwner,
+        footerPhone: patch.footerPhone ?? footerPhone,
+        footerZalo: patch.footerZalo ?? footerZalo,
+        footerFacebook: patch.footerFacebook ?? footerFacebook,
+        footerBrandName: patch.footerBrandName ?? footerBrandName,
+        footerAboutText: patch.footerAboutText ?? footerAboutText,
+        footerHours: patch.footerHours ?? footerHours,
+        footerPolicy: patch.footerPolicy ?? footerPolicy,
+        footerCopyright: patch.footerCopyright ?? footerCopyright,
+      });
+      queryClient.invalidateQueries({ queryKey: ["systemSettings"] });
+    } catch (err: any) {
+      addToast(err.message || "Lưu cấu hình thất bại!", "error");
+    }
+  };
+
+  // Web content updates — save to state, localStorage (fallback), and backend API
+  const handleUpdateTickerNews = async (text: string) => {
     setTickerNews(text);
     localStorage.setItem("haina_ticker_news", text);
+    await persistSettingsToApi({ tickerNews: text });
   };
 
-  const handleUpdateFooterLinks = (links: { phone: string; zalo: string; facebook: string }) => {
+  const handleUpdateFooterLinks = async (links: {
+    phone: string;
+    zalo: string;
+    facebook: string;
+    brandName?: string;
+    aboutText?: string;
+    hours?: string;
+    policy?: string;
+    copyright?: string;
+  }) => {
     setFooterPhone(links.phone);
     setFooterZalo(links.zalo);
     setFooterFacebook(links.facebook);
     localStorage.setItem("haina_footer_phone", links.phone);
     localStorage.setItem("haina_footer_zalo", links.zalo);
     localStorage.setItem("haina_footer_fb", links.facebook);
+
+    const newBrand = links.brandName ?? footerBrandName;
+    const newAbout = links.aboutText ?? footerAboutText;
+    const newHours = links.hours ?? footerHours;
+    const newPolicy = links.policy ?? footerPolicy;
+    const newCopyright = links.copyright ?? footerCopyright;
+
+    if (links.brandName !== undefined) {
+      setFooterBrandName(links.brandName);
+      localStorage.setItem("haina_footer_brand", links.brandName);
+    }
+    if (links.aboutText !== undefined) {
+      setFooterAboutText(links.aboutText);
+      localStorage.setItem("haina_footer_about", links.aboutText);
+    }
+    if (links.hours !== undefined) {
+      setFooterHours(links.hours);
+      localStorage.setItem("haina_footer_hours", links.hours);
+    }
+    if (links.policy !== undefined) {
+      setFooterPolicy(links.policy);
+      localStorage.setItem("haina_footer_policy", links.policy);
+    }
+    if (links.copyright !== undefined) {
+      setFooterCopyright(links.copyright);
+      localStorage.setItem("haina_footer_copyright", links.copyright);
+    }
+
+    await persistSettingsToApi({
+      footerPhone: links.phone,
+      footerZalo: links.zalo,
+      footerFacebook: links.facebook,
+      footerBrandName: newBrand,
+      footerAboutText: newAbout,
+      footerHours: newHours,
+      footerPolicy: newPolicy,
+      footerCopyright: newCopyright,
+    });
   };
 
-  const handleUpdateBilling = (billing: {
+  const handleUpdateBilling = async (billing: {
     atmBank: string;
     atmAccountNumber: string;
     atmAccountOwner: string;
@@ -697,6 +914,14 @@ export default function App() {
     localStorage.setItem("haina_atm_owner", billing.atmAccountOwner);
     localStorage.setItem("haina_momo_phone", billing.momoPhone);
     localStorage.setItem("haina_momo_owner", billing.momoAccountOwner);
+
+    await persistSettingsToApi({
+      atmBank: billing.atmBank,
+      atmAccountNumber: billing.atmAccountNumber,
+      atmAccountOwner: billing.atmAccountOwner,
+      momoPhone: billing.momoPhone,
+      momoAccountOwner: billing.momoAccountOwner,
+    });
   };
 
   // Reset entire simulation database
@@ -973,6 +1198,7 @@ export default function App() {
           <AdminPanel
             accounts={accounts}
             transactions={transactions}
+            dashboardStats={adminDashboardStats}
             onAddAccount={handleAddAccountAdmin}
             onDeleteAccount={handleDeleteAccountAdmin}
             onResetShop={handleResetShopAdmin}
@@ -993,6 +1219,11 @@ export default function App() {
             footerPhone={footerPhone}
             footerZalo={footerZalo}
             footerFacebook={footerFacebook}
+            footerBrandName={footerBrandName}
+            footerAboutText={footerAboutText}
+            footerHours={footerHours}
+            footerPolicy={footerPolicy}
+            footerCopyright={footerCopyright}
             onUpdateFooterLinks={handleUpdateFooterLinks}
           />
         )}
@@ -1343,6 +1574,11 @@ export default function App() {
           phone={footerPhone}
           zalo={footerZalo}
           facebook={footerFacebook}
+          brandName={footerBrandName}
+          aboutText={footerAboutText}
+          hours={footerHours}
+          policy={footerPolicy}
+          copyright={footerCopyright}
         />
       )}
 

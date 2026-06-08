@@ -114,7 +114,8 @@
     "viewDetails": "CHI TIẾT ACC",
     "buyNow": "MUA NGAY",
     "outOfStock": "HẾT HÀNG",
-    "stockCount": "Tồn kho: {{count}}"
+    "stockCount": "Tồn kho: {{count}}",
+    "soldCount": "Đã bán: {{count}}"
   },
   "recharge": {
     "titleRechargeArea": "KHU VỰC NẠP QUỸ SỐ DƯ TỰ ĐỘNG",

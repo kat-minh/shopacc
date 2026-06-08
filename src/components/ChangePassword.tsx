@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, ShieldAlert } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
+import { api } from "../api";
 
 interface ChangePasswordProps {
   onBack: () => void;
@@ -16,13 +17,13 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (newPassword.length < 4) {
-      setError(t("changePassword.errLength"));
+    if (newPassword.length < 6) {
+      setError("Mật khẩu mới phải có ít nhất 6 ký tự.");
       return;
     }
 
@@ -31,29 +32,18 @@ export default function ChangePassword({ onBack }: ChangePasswordProps) {
       return;
     }
 
-    // Attempt to update password in local storage registered users list
-    const usersStr = localStorage.getItem("haina_registered_users");
-    const users = usersStr ? JSON.parse(usersStr) : [];
-
-    const userIndex = users.findIndex(
-      (u: any) =>
-        u.username.toLowerCase() === currentUser.username.toLowerCase(),
-    );
-
-    if (userIndex !== -1) {
-      // Validate current password
-      if (users[userIndex].password !== currentPassword) {
-        setError(t("changePassword.errIncorrectCurrent"));
-        return;
-      }
-      users[userIndex].password = newPassword;
-      localStorage.setItem("haina_registered_users", JSON.stringify(users));
+    try {
+      await api.post("/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      setSuccess(t("changePassword.success"));
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setError(err.message || "Đổi mật khẩu thất bại!");
     }
-
-    setSuccess(t("changePassword.success"));
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
 
   return (
