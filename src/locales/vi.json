@@ -117,6 +117,7 @@
     "stockCount": "Tồn kho: {{count}}"
   },
   "recharge": {
+    "titleRechargeArea": "KHU VỰC NẠP QUỸ SỐ DƯ TỰ ĐỘNG",
     "tabCard": "Nạp Thẻ Cào",
     "tabAtm": "Nạp ATM / MoMo",
     "titleCard": "Nạp Thẻ Cào",

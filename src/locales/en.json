@@ -117,6 +117,7 @@
     "stockCount": "Stock: {{count}}"
   },
   "recharge": {
+    "titleRechargeArea": "AUTOMATIC BALANCE RECHARGE AREA",
     "tabCard": "Recharge Card",
     "tabAtm": "Recharge ATM / MoMo",
     "titleCard": "Recharge Scratch Card",

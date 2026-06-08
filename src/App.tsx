@@ -1003,7 +1003,7 @@ export default function App() {
             <div className="flex items-center justify-between border-b-2 border-amber-500/20 pb-4">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-amber-300 tracking-wider">
-                  KHU VỰC NẠP QUỸ SỐ DƯ TỰ ĐỘNG
+                  {t("recharge.titleRechargeArea")}
                 </h2>
               </div>
               <button
@@ -1013,7 +1013,7 @@ export default function App() {
                 }}
                 className="bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 text-amber-400 py-1.5 px-4 rounded-xl border border-amber-500/20 text-xs font-bold uppercase transition"
               >
-                ← Về Trang Chủ
+                {t("productDetail.backHome")}
               </button>
             </div>
             <RechargeSection

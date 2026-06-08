@@ -117,6 +117,7 @@
     "stockCount": "Stock: {{count}}"
   },
   "recharge": {
+    "titleRechargeArea": "ÁREA DE RECARGA AUTOMÁTICA DE SALDO",
     "tabCard": "Cargar Tarjeta",
     "tabAtm": "Cargar ATM / MoMo",
     "titleCard": "Cargar Tarjeta Rasca",
