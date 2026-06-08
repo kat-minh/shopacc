@@ -16,148 +16,77 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { t } = useTranslation();
   const isAvailable = account.status === "Available";
+  const isIOS = account.category.toLowerCase().includes("ios") || account.title.toLowerCase().includes("ios");
+  const platformText = isIOS ? "IOS" : "ANDROID";
+  const platformBg = isIOS ? "bg-blue-500" : "bg-emerald-600";
 
   return (
-    <div className="bg-[#2a0404]/90 rounded-2xl border-2 border-amber-500/10 hover:border-amber-400 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative flex flex-col h-full justify-between">
-      {/* Top Image Banner Section */}
-      <div className="h-44 w-full bg-stone-900 relative overflow-hidden">
-        <img
-          src={account.imageUrl}
-          alt={account.title}
-          className="w-full h-full object-cover transition transform hover:scale-105 duration-500 cursor-pointer"
-          onClick={() => onSelect(account)}
-        />
+    <div className="bg-[#1c0202]/90 rounded-2xl border border-amber-500/10 hover:border-amber-400/50 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative flex flex-col h-full justify-between p-3.5">
+      <div>
+        {/* Top Image Banner Section */}
+        <div className="h-36 sm:h-44 w-full bg-stone-900 relative rounded-xl overflow-hidden mb-3">
+          <img
+            src={account.imageUrl}
+            alt={account.title}
+            className="w-full h-full object-cover transition transform hover:scale-105 duration-500 cursor-pointer"
+            onClick={() => onSelect(account)}
+          />
 
-        {/* Absolute indicators */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-          <span className="bg-red-800/90 border border-amber-300 text-white font-extrabold text-[10px] px-2.5 py-0.5 rounded shadow">
-            {t("productCard.code")}: {account.id}
-          </span>
-          <span className="bg-[#4d0808]/90 text-amber-300 border border-amber-500/20 font-black text-[9px] px-2 py-0.5 rounded shadow uppercase">
-            {account.game.replace("Dragon Ball ", "DB ")}
-          </span>
-        </div>
+          {/* Platform Badge (Top Left) */}
+          <div className="absolute top-2.5 left-2.5">
+            <span className={`text-white font-extrabold text-[10px] px-2.5 py-1 rounded shadow uppercase ${platformBg}`}>
+              {platformText}
+            </span>
+          </div>
 
-        {/* Status Label */}
-        <div className="absolute top-3 right-3">
-          {isAvailable ? (
-            <span className="bg-emerald-600 text-white font-black text-xs px-2.5 py-1 rounded-full uppercase border border-emerald-400 shadow animate-pulse">
-              {t("productCard.inStock")}
-            </span>
-          ) : (
-            <span className="bg-stone-600 text-stone-200 font-extrabold text-xs px-2.5 py-1 rounded-full uppercase border border-stone-500 shadow">
-              {t("productCard.sold")}
-            </span>
+          {/* Discount Badge (Top Right) */}
+          {account.originalPrice > account.price && (
+            <div className="absolute top-2.5 right-2.5">
+              <span className="bg-orange-600 text-white font-black text-[10px] px-2 py-1 rounded shadow">
+                -{Math.round(((account.originalPrice - account.price) / account.originalPrice) * 100)}%
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Gems / Crystals Overlay */}
-        {account.stats.chronoCrystals ? (
-          <div className="absolute bottom-2 right-2 bg-linear-to-r from-teal-950/90 to-blue-900/90 border border-amber-300/40 text-amber-300 text-xs px-2.5 py-1 rounded-lg font-black shadow-md flex items-center gap-1 shrink-0">
-            💎 {account.stats.chronoCrystals.toLocaleString()} CC
-          </div>
-        ) : null}
+        {/* Product Information Body */}
+        <h4
+          className="font-extrabold text-[#ffffff] text-sm leading-snug line-clamp-2 hover:underline cursor-pointer transition min-h-10"
+          onClick={() => onSelect(account)}
+        >
+          {account.title}
+        </h4>
+
+        {/* Price & Original Price Row */}
+        <div className="flex items-center justify-between mt-3">
+          <span className="text-base font-black text-amber-400">
+            {account.price.toLocaleString("vi-VN")} đ
+          </span>
+          {account.originalPrice > account.price && (
+            <span className="text-xs text-stone-400 line-through">
+              {account.originalPrice.toLocaleString("vi-VN")} đ
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Product Information Body */}
-      <div className="p-4 grow flex flex-col justify-between">
-        <div>
-          <span className="text-[10px] text-amber-400/90 uppercase tracking-widest font-black block mb-1">
-            {t("categories." + account.category, account.category)}
-          </span>
-          <h4
-            className="font-extrabold text-stone-100 text-sm leading-snug line-clamp-2 hover:underline cursor-pointer transition"
-            onClick={() => onSelect(account)}
+      {/* Full-width Button */}
+      <div className="mt-4">
+        {isAvailable ? (
+          <button
+            onClick={() => onBuy(account)}
+            className="w-full bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-2.5 rounded-xl text-xs font-black shadow-md transition duration-150 transform active:scale-95 cursor-pointer uppercase"
           >
-            {account.title}
-          </h4>
-
-          {/* Core Star / Character Badges */}
-          <div className="flex flex-wrap gap-1 mt-3">
-            {account.stats.vipCharacters?.slice(0, 3).map((char, index) => (
-              <span
-                key={index}
-                className="bg-amber-500/10 text-amber-300 text-[10px] px-2 py-0.5 rounded border border-amber-500/10 truncate max-w-30"
-              >
-                {char}
-              </span>
-            ))}
-            {account.stats.starsCount ? (
-              <span className="bg-rose-500/10 text-rose-300 text-[10px] px-2 py-0.5 rounded border border-rose-500/15">
-                ✦ {account.stats.starsCount} ⭐
-              </span>
-            ) : null}
-          </div>
-
-          {/* Details specs preview list */}
-          <ul className="mt-4 text-[11px] text-stone-300/90 space-y-1 bg-red-950/40 p-2.5 rounded-xl border border-amber-500/5">
-            {account.details.slice(0, 2).map((detail, index) => (
-              <li
-                key={index}
-                className="flex items-center gap-1.5 truncate text-stone-300 text-left"
-              >
-                <span className="text-amber-400">✔</span> {detail}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-amber-500/10">
-          {/* Prices Row */}
-          <div className="flex items-end justify-between mb-3">
-            <div className="flex flex-col items-start">
-              <p className="text-[10px] text-stone-400 line-through">
-                {account.originalPrice.toLocaleString("vi-VN")} đ
-              </p>
-              <p className="text-base font-black text-amber-400">
-                {account.price.toLocaleString("vi-VN")} đ
-              </p>
-              {isAvailable && (
-                <span className="text-[10px] text-emerald-400 font-bold mt-0.5">
-                  {t("productCard.stockCount", { count: account.quantity ?? 1 })}
-                </span>
-              )}
-            </div>
-            {account.originalPrice > account.price ? (
-              <span className="text-[10px] bg-red-600 text-white font-black px-1.5 py-0.5 rounded">
-                {t("productCard.discount")}{" "}
-                {Math.round(
-                  ((account.originalPrice - account.price) /
-                    account.originalPrice) *
-                    100,
-                )}
-                %
-              </span>
-            ) : null}
-          </div>
-
-          {/* Navigation Action Buttons (Detail & Purchase Buy) */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => onSelect(account)}
-              className="bg-red-950 hover:bg-red-900 border border-amber-500/25 text-amber-200 py-2 px-1 rounded-xl text-xs font-black transition flex items-center justify-center gap-1"
-            >
-              {t("productCard.viewDetails")}
-            </button>
-
-            {isAvailable ? (
-              <button
-                onClick={() => onBuy(account)}
-                className="bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 py-2 px-1 rounded-xl text-xs font-black shadow-md flex items-center justify-center gap-1 transition"
-              >
-                {t("productCard.buyNow")}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                disabled
-                className="bg-stone-800 text-stone-400/80 py-2 px-1 rounded-xl text-xs font-bold cursor-not-allowed text-center"
-              >
-                {t("productCard.outOfStock")}
-              </button>
-            )}
-          </div>
-        </div>
+            {t("productCard.buyNow")}
+          </button>
+        ) : (
+          <button
+            disabled
+            className="w-full bg-stone-850 text-stone-500 py-2.5 rounded-xl text-xs font-bold cursor-not-allowed text-center uppercase"
+          >
+            {t("productCard.outOfStock")}
+          </button>
+        )}
       </div>
     </div>
   );

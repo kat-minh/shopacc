@@ -159,6 +159,19 @@ export default function App() {
   // Top recharger ranking display tabs
   const [activeMonthTab, setActiveMonthTab] = useState<"june" | "may">("june");
 
+  // Track expanded state for categories product grids
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Recharge sub-tabs
   const [rechargeTab, setRechargeTab] = useState<"card" | "atm">("card");
 
@@ -615,7 +628,7 @@ export default function App() {
     const trimmedOld = oldCat.trim();
     const trimmedNew = newCat.trim();
     if (!trimmedNew || trimmedOld === trimmedNew) return;
-    
+
     const updatedCats = categories.map(c => c === trimmedOld ? trimmedNew : c);
     setCategories(updatedCats);
     localStorage.setItem("haina_categories", JSON.stringify(updatedCats));
@@ -1214,11 +1227,10 @@ export default function App() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`py-2 px-4.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer ${
-                    selectedCategory === cat
+                  className={`py-2 px-4.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer ${selectedCategory === cat
                       ? "bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/20"
                       : "bg-stone-900/40 text-stone-300 border border-amber-500/10 hover:bg-stone-900/80 hover:text-amber-400"
-                  }`}
+                    }`}
                 >
                   {t("categories." + cat, cat)}
                 </button>
@@ -1243,6 +1255,10 @@ export default function App() {
                   .filter((cat) => cat !== "Tất cả" && (selectedCategory === "Tất cả" || selectedCategory === cat))
                   .map((cat) => {
                     const accountsInCat = filteredAccounts.filter((acc) => acc.category === cat);
+                    const limit = isDesktop ? 8 : 4;
+                    const isExpanded = !!expandedCategories[cat];
+                    const displayedAccounts = isExpanded ? accountsInCat : accountsInCat.slice(0, limit);
+                    const hasMore = accountsInCat.length > limit;
 
                     return (
                       <div key={cat} className="space-y-6">
@@ -1274,21 +1290,38 @@ export default function App() {
                             Chưa có tài khoản nào thuộc danh mục này.
                           </div>
                         ) : (
-                          /* Accounts Grid */
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {accountsInCat.map((acc) => (
-                              <ProductCard
-                                key={acc.id}
-                                account={acc}
-                                onSelect={(account) => {
-                                  setSelectedAccount(account);
-                                  setActiveView("product-detail");
-                                  navigate(`/product/${account.id}`);
-                                  window.scrollTo({ top: 0, behavior: "smooth" });
-                                }}
-                                onBuy={handleBuyAccount}
-                              />
-                            ))}
+                          <div className="space-y-6">
+                            {/* Accounts Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                              {displayedAccounts.map((acc) => (
+                                <ProductCard
+                                  key={acc.id}
+                                  account={acc}
+                                  onSelect={(account) => {
+                                    setSelectedAccount(account);
+                                    setActiveView("product-detail");
+                                    navigate(`/product/${account.id}`);
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                  }}
+                                  onBuy={handleBuyAccount}
+                                />
+                              ))}
+                            </div>
+                            {hasMore && (
+                              <div className="flex justify-end pt-2">
+                                <button
+                                  onClick={() => {
+                                    setExpandedCategories((prev) => ({
+                                      ...prev,
+                                      [cat]: !isExpanded,
+                                    }));
+                                  }}
+                                  className="bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 font-black px-6 py-2 rounded-xl text-xs uppercase transition cursor-pointer shadow-md shadow-amber-500/20 hover:scale-105 active:scale-95 duration-200"
+                                >
+                                  {isExpanded ? t("home.showLess") : t("home.showMore")}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1619,7 +1652,7 @@ export default function App() {
               >
                 {t("checkout.cancel")}
               </button>
-              
+
               <button
                 onClick={executeBuyAccount}
                 className="flex-1 bg-amber-500 hover:bg-amber-400 text-red-950 py-2.5 px-4 rounded-xl text-xs font-black uppercase transition cursor-pointer shadow-lg shadow-amber-500/20"

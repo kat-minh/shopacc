@@ -214,7 +214,9 @@
     "noAccountsFound": "Không tìm thấy tài khoản Dragon Ball Legends nào khớp yêu cầu.",
     "resetFilters": "RESET BỘ LỌC TÌM KIẾM",
     "monthJune": "T.6",
-    "monthMay": "T.5"
+    "monthMay": "T.5",
+    "showMore": "Xem thêm",
+    "showLess": "Thu gọn"
   },
   "categories": {
     "Tất cả": "Tất cả",

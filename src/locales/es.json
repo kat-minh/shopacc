@@ -214,7 +214,9 @@
     "noAccountsFound": "No se encontraron cuentas de Dragon Ball Legends que coincidan con su solicitud.",
     "resetFilters": "REABLECER FILTROS DE BÚSQUEDA",
     "monthJune": "Jun",
-    "monthMay": "May"
+    "monthMay": "May",
+    "showMore": "Ver más",
+    "showLess": "Mostrar menos"
   },
   "categories": {
     "Tất cả": "Todo",
