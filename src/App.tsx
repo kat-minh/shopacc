@@ -324,6 +324,7 @@ export default function App() {
   // Track expanded state for categories product grids
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
+  const [postLoginRedirect, setPostLoginRedirect] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -548,8 +549,9 @@ export default function App() {
     const protectedViews: AppView[] = ["profile", "change-password", "user-history", "history", "admin", "recharge"];
 
     if (isGuest && protectedViews.includes(routeView)) {
+      setPostLoginRedirect(location.pathname);
       setActiveView("login");
-      navigate("/login", { state: { from: location.pathname } });
+      navigate("/login");
       return;
     }
 
@@ -593,12 +595,9 @@ export default function App() {
     adminState: boolean,
   ) => {
     login(token, { ...user, isAdmin: adminState });
-    if (adminState) {
-      navigate("/admin");
-    } else {
-      const from = (location.state as any)?.from || "/";
-      navigate(from);
-    }
+    const destination = postLoginRedirect ?? (adminState ? "/admin" : "/");
+    navigate(destination);
+    setPostLoginRedirect(null);
   };
 
   // Quick sandbox fund utility
