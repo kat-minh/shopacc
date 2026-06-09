@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { GameAccount, Transaction } from "../data";
-import { api } from "../api";
+import { api, uploadImage, isUploadableImage } from "../api";
 
 interface PagedResult<T> {
   data: T[];
@@ -197,6 +197,8 @@ export default function AdminPanel({
   const [transferCode, setTransferCode] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(15);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingEditImage, setUploadingEditImage] = useState(false);
 
   // Edit account form states
   const [editId, setEditId] = useState("");
@@ -2236,20 +2238,37 @@ export default function AdminPanel({
                       <input
                         type="file"
                         accept="image/*,video/*"
-                        onChange={(e) => {
+                        disabled={uploadingImage}
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
-                          if (file) {
+                          e.target.value = ""; // cho phép chọn lại cùng file
+                          if (!file) return;
+
+                          // Video: backend chưa hỗ trợ upload -> giữ fallback nhúng base64.
+                          if (!isUploadableImage(file)) {
                             const reader = new FileReader();
                             reader.onload = (event) => {
-                              if (event.target?.result) {
-                                setImageUrl(event.target.result as string);
-                              }
+                              if (event.target?.result) setImageUrl(event.target.result as string);
                             };
                             reader.readAsDataURL(file);
+                            return;
+                          }
+
+                          // Ảnh: upload thẳng lên BizFly Cloud rồi lưu fileUrl.
+                          setUploadingImage(true);
+                          try {
+                            const url = await uploadImage(file);
+                            setImageUrl(url);
+                            addToast("Tải ảnh lên thành công!", "success");
+                          } catch (err: any) {
+                            addToast("Tải ảnh thất bại: " + (err?.message || "Lỗi không xác định"), "error");
+                          } finally {
+                            setUploadingImage(false);
                           }
                         }}
-                        className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer"
+                        className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
+                      {uploadingImage && <span className="text-[10px] text-amber-400 animate-pulse">Đang tải ảnh lên...</span>}
                     </div>
                   </div>
                   <div className="sm:col-span-4 flex justify-center">
@@ -2434,20 +2453,25 @@ export default function AdminPanel({
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => {
+                        disabled={uploadingEditImage}
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              if (event.target?.result) {
-                                setEditImageUrl(event.target.result as string);
-                              }
-                            };
-                            reader.readAsDataURL(file);
+                          e.target.value = ""; // cho phép chọn lại cùng file
+                          if (!file) return;
+                          setUploadingEditImage(true);
+                          try {
+                            const url = await uploadImage(file);
+                            setEditImageUrl(url);
+                            addToast("Tải ảnh lên thành công!", "success");
+                          } catch (err: any) {
+                            addToast("Tải ảnh thất bại: " + (err?.message || "Lỗi không xác định"), "error");
+                          } finally {
+                            setUploadingEditImage(false);
                           }
                         }}
-                        className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer"
+                        className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
+                      {uploadingEditImage && <span className="text-[10px] text-amber-400 animate-pulse">Đang tải ảnh lên...</span>}
                     </div>
                   </div>
                   <div className="sm:col-span-4 flex justify-center">
