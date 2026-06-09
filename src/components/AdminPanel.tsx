@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { GameAccount, Transaction } from "../data";
 import { api } from "../api";
 
@@ -9,11 +9,19 @@ interface PagedResult<T> {
   totalPages: number;
   currentPage: number;
 }
+
+interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  phoneNumber?: string | null;
+  balance: number;
+  role: string;
+}
 import {
   Shield,
   Plus,
   Trash2,
-  RefreshCw,
   Coins,
   History,
   Inbox,
@@ -27,6 +35,8 @@ import {
   TrendingUp,
   Settings,
   Home,
+  Gift,
+  Wallet,
 } from "lucide-react";
 import EmptyState from "./EmptyState";
 import ConfirmDialog from "./ConfirmDialog";
@@ -127,8 +137,16 @@ export default function AdminPanel({
   const [editingAcc, setEditingAcc] = useState<GameAccount | null>(null);
 
   // Confirmations
-  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Tặng tiền cho user
+  const queryClient = useQueryClient();
+  const [giftModalOpen, setGiftModalOpen] = useState(false);
+  const [giftUserSearch, setGiftUserSearch] = useState("");
+  const [giftUserSearchDebounced, setGiftUserSearchDebounced] = useState("");
+  const [giftSelectedUser, setGiftSelectedUser] = useState<AdminUser | null>(null);
+  const [giftAmount, setGiftAmount] = useState<string>("");
+  const [giftSubmitting, setGiftSubmitting] = useState(false);
 
   // Pagination states
   const [txPage, setTxPage] = useState(1);
@@ -644,6 +662,66 @@ export default function AdminPanel({
     return () => clearTimeout(h);
   }, [accSearch]);
 
+  useEffect(() => {
+    const h = setTimeout(() => {
+      setGiftUserSearchDebounced(giftUserSearch.trim());
+    }, 400);
+    return () => clearTimeout(h);
+  }, [giftUserSearch]);
+
+  // Danh sách người dùng để chọn khi tặng tiền (chỉ fetch khi mở modal)
+  const usersQuery = useQuery({
+    queryKey: ["users", "admin", giftUserSearchDebounced],
+    queryFn: () =>
+      api.get<PagedResult<AdminUser>>("/admin/users", {
+        params: {
+          search: giftUserSearchDebounced || undefined,
+          page: 1,
+          limit: 20,
+        },
+      }),
+    enabled: giftModalOpen,
+    placeholderData: keepPreviousData,
+  });
+  const giftUsers = usersQuery.data?.data ?? [];
+
+  const openGiftModal = () => {
+    setGiftSelectedUser(null);
+    setGiftUserSearch("");
+    setGiftUserSearchDebounced("");
+    setGiftAmount("");
+    setGiftModalOpen(true);
+  };
+
+  const handleGiftSubmit = async () => {
+    if (!giftSelectedUser) {
+      addToast("Vui lòng chọn người dùng cần tặng tiền!", "error");
+      return;
+    }
+    const amount = Number(giftAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      addToast("Số tiền tặng phải lớn hơn 0!", "error");
+      return;
+    }
+
+    setGiftSubmitting(true);
+    try {
+      const res = await api.post<{ message: string; user: AdminUser }>(
+        `/admin/users/${giftSelectedUser.id}/gift-balance`,
+        { amount }
+      );
+      addToast(res.message || "Tặng tiền thành công!", "success");
+      setGiftModalOpen(false);
+      // Làm mới giao dịch + dashboard để phản ánh khoản tặng
+      queryClient.invalidateQueries({ queryKey: ["transactions", "admin"] });
+      queryClient.invalidateQueries({ queryKey: ["users", "admin"] });
+    } catch (err: any) {
+      addToast(err?.message || "Tặng tiền thất bại!", "error");
+    } finally {
+      setGiftSubmitting(false);
+    }
+  };
+
   // Quy đổi các "bucket" khoảng giá ở UI sang tham số min/max gửi cho server
   const txAmountRange = (() => {
     switch (txPriceRange) {
@@ -938,12 +1016,10 @@ export default function AdminPanel({
 
           <div className="border-t border-amber-500/10 pt-4 text-center">
             <button
-              onClick={() => {
-                setResetConfirmOpen(true);
-              }}
-              className="w-full bg-red-800 hover:bg-red-700 text-amber-300 py-2 px-3 rounded-xl font-bold text-[10px] border border-amber-500/15 transition flex items-center justify-center gap-1 mx-auto"
+              onClick={openGiftModal}
+              className="w-full bg-emerald-700 hover:bg-emerald-600 text-amber-100 py-2 px-3 rounded-xl font-bold text-[10px] border border-amber-500/15 transition flex items-center justify-center gap-1 mx-auto"
             >
-              <RefreshCw className="w-3.5 h-3.5" /> RESET DATA SHOP
+              <Gift className="w-3.5 h-3.5" /> TẶNG TIỀN CHO USER
             </button>
           </div>
         </div>
@@ -2734,19 +2810,136 @@ export default function AdminPanel({
           </div>
         </div>
       )}
-      {/* Confirm Dialog for Resetting Data Shop */}
-      <ConfirmDialog
-        isOpen={resetConfirmOpen}
-        title="RESET DỮ LIỆU CỬA HÀNG"
-        message="Hành động này sẽ xóa toàn bộ lịch sử giao dịch, khôi phục danh sách tài khoản mặc định và đặt lại số dư người dùng. Bạn có chắc chắn muốn thực hiện không?"
-        confirmText="Xác nhận Reset"
-        cancelText="Hủy bỏ"
-        onConfirm={() => {
-          onResetShop();
-          setResetConfirmOpen(false);
-        }}
-        onCancel={() => setResetConfirmOpen(false)}
-      />
+      {/* Modal: Tặng tiền cho user */}
+      {giftModalOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => !giftSubmitting && setGiftModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-[#2c0404] rounded-3xl border border-amber-500/20 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-amber-500/15 bg-[#4d0808]">
+              <h3 className="font-extrabold uppercase text-sm text-amber-300 flex items-center gap-2">
+                <Gift className="w-4 h-4" /> Tặng tiền cho người dùng
+              </h3>
+              <button
+                onClick={() => !giftSubmitting && setGiftModalOpen(false)}
+                className="text-stone-400 hover:text-amber-400 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Chọn user */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-stone-400">
+                  Chọn người dùng
+                </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={giftUserSearch}
+                    onChange={(e) => setGiftUserSearch(e.target.value)}
+                    placeholder="Tìm theo email / tên / SĐT..."
+                    className="w-full bg-[#1a0202] border border-amber-500/15 rounded-xl pl-9 pr-3 py-2 text-xs text-stone-100 placeholder:text-stone-600 focus:outline-none focus:border-amber-500/40"
+                  />
+                </div>
+
+                <div className="max-h-44 overflow-y-auto rounded-xl border border-amber-500/10 divide-y divide-amber-500/5">
+                  {usersQuery.isLoading ? (
+                    <div className="text-center text-stone-500 text-xs py-4">Đang tải...</div>
+                  ) : giftUsers.length === 0 ? (
+                    <div className="text-center text-stone-500 text-xs py-4">Không tìm thấy người dùng nào.</div>
+                  ) : (
+                    giftUsers.map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => setGiftSelectedUser(u)}
+                        className={`w-full text-left px-3 py-2 transition flex items-center justify-between gap-2 ${
+                          giftSelectedUser?.id === u.id
+                            ? "bg-emerald-700/30"
+                            : "hover:bg-stone-900/60"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-stone-100 truncate">{u.email}</div>
+                          <div className="text-[10px] text-stone-500 truncate">
+                            {u.name}{u.phoneNumber ? ` · ${u.phoneNumber}` : ""}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-amber-400 shrink-0">
+                          {u.balance.toLocaleString()}đ
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Số tiền */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-stone-400">
+                  Số tiền tặng (VND)
+                </label>
+                <div className="relative">
+                  <Wallet className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="number"
+                    min={0}
+                    value={giftAmount}
+                    onChange={(e) => setGiftAmount(e.target.value)}
+                    placeholder="Nhập số tiền..."
+                    className="w-full bg-[#1a0202] border border-amber-500/15 rounded-xl pl-9 pr-3 py-2 text-sm font-mono text-emerald-300 placeholder:text-stone-600 focus:outline-none focus:border-amber-500/40"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[10000, 50000, 100000, 200000, 500000].map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setGiftAmount(String(v))}
+                      className="px-2 py-1 rounded-lg bg-stone-900/60 hover:bg-amber-500/20 text-[10px] font-bold text-stone-300 border border-amber-500/10 transition"
+                    >
+                      +{v.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {giftSelectedUser && Number(giftAmount) > 0 && (
+                <div className="text-[11px] text-stone-300 bg-[#1a0202] rounded-xl px-3 py-2 border border-amber-500/10">
+                  Tặng <span className="font-bold text-emerald-400">{Number(giftAmount).toLocaleString()}đ</span> cho{" "}
+                  <span className="font-bold text-amber-300">{giftSelectedUser.email}</span>. Số dư mới:{" "}
+                  <span className="font-bold text-emerald-400">
+                    {(giftSelectedUser.balance + Number(giftAmount)).toLocaleString()}đ
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 px-5 py-4 border-t border-amber-500/15">
+              <button
+                onClick={() => setGiftModalOpen(false)}
+                disabled={giftSubmitting}
+                className="flex-1 bg-stone-800 hover:bg-stone-700 disabled:opacity-50 text-stone-200 py-2 rounded-xl font-bold text-xs transition"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleGiftSubmit}
+                disabled={giftSubmitting || !giftSelectedUser || !(Number(giftAmount) > 0)}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5"
+              >
+                <Gift className="w-3.5 h-3.5" />
+                {giftSubmitting ? "Đang tặng..." : "Xác nhận tặng"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Dialog for Deleting Account */}
       <ConfirmDialog
