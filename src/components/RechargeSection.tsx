@@ -78,25 +78,27 @@ export default function RechargeSection({
   // Số tiền điền sẵn vào QR; null = để trống, người dùng tự nhập trong app ngân hàng.
   const [bankAmount, setBankAmount] = useState<number | null>(100000);
 
+  // Chỉ gọi API (cần đăng nhập) khi đã đăng nhập — tránh 401 làm interceptor tự logout → bị đá về home.
+  const isLoggedIn = currentUser.username !== "Khách";
   const bankQuery = useQuery({
     queryKey: ["bankRecharge", bankAmount],
     queryFn: () =>
       api.get<BankRechargeInfo>("/recharge/bank", {
         params: { amount: bankAmount ?? undefined },
       }),
-    enabled: activeTab === "atm",
+    enabled: activeTab === "atm" && isLoggedIn,
     placeholderData: keepPreviousData,
   });
   const bankInfo = bankQuery.data;
 
   // Trong lúc ở tab chuyển khoản, định kỳ làm mới /auth/me để phát hiện tiền vào (webhook cộng tiền).
   useEffect(() => {
-    if (activeTab !== "atm") return;
+    if (activeTab !== "atm" || !isLoggedIn) return;
     const id = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ["userMe"] });
     }, 5000);
     return () => clearInterval(id);
-  }, [activeTab, queryClient]);
+  }, [activeTab, isLoggedIn, queryClient]);
 
   // Mốc số dư khi mở tab; số dư tăng lên => đã nhận được tiền nạp.
   const baselineBalanceRef = useRef<number | null>(null);

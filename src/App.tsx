@@ -337,7 +337,6 @@ export default function App() {
 
   // Recharge sub-tabs
   const [rechargeTab, setRechargeTab] = useState<"card" | "atm">("card");
-  const [pendingRechargeTab, setPendingRechargeTab] = useState<"card" | "atm" | null>(null);
 
   // Web Content Customization States
   const [tickerNews, setTickerNews] = useState<string>("Hệ thống bán acc Dragon Ball Legends tự động hainagaming.com đang tặng giftcode mừng máy chủ mới! Nạp Momo / ATM cộng 10% giá trị.");
@@ -598,12 +597,7 @@ export default function App() {
     login(token, { ...user, isAdmin: adminState });
     const destination = postLoginRedirect ?? (adminState ? "/admin" : "/");
     navigate(destination);
-    // Restore pending recharge sub-tab after login if navigating to recharge
-    if (destination.startsWith("/recharge") && pendingRechargeTab) {
-      setRechargeTab(pendingRechargeTab);
-    }
     setPostLoginRedirect(null);
-    setPendingRechargeTab(null);
   };
 
   // Quick sandbox fund utility
@@ -1083,15 +1077,14 @@ export default function App() {
       {activeView !== "admin" && (
         <Header
           currentUser={currentUser}
-          onNavigate: (view, subTab) => {
+          onNavigate={(view, subTab) => {
             setActiveView(view);
             if (view === "recharge" && subTab) {
               setRechargeTab(subTab);
-              setPendingRechargeTab(subTab);
             }
             setSelectedAccount(null);
             navigate(viewToPath(view));
-          },
+          }}
           activeView={activeView}
           onLogout={handleLogout}
           onQuickAddMoney={handleQuickAddMoney}
@@ -1460,34 +1453,34 @@ export default function App() {
                         );
                       }
                       return items.map((re, rank) => (
-                      <div
-                        key={rank}
-                        className="flex items-center justify-between bg-red-950/60 p-2 rounded-xl border border-amber-500/10 text-[10px]"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[9px] ${rank === 0
-                              ? "bg-yellow-400 text-red-950"
-                              : rank === 1
-                                ? "bg-stone-300 text-red-950"
-                                : rank === 2
-                                  ? "bg-amber-600 text-white"
-                                  : "bg-red-950 text-stone-400"
-                              }`}
-                          >
-                            {rank + 1}
-                          </span>
-                          <span className="font-extrabold text-stone-100 font-mono">
-                            {re.username}
-                          </span>
-                        </div>
+                        <div
+                          key={rank}
+                          className="flex items-center justify-between bg-red-950/60 p-2 rounded-xl border border-amber-500/10 text-[10px]"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[9px] ${rank === 0
+                                ? "bg-yellow-400 text-red-950"
+                                : rank === 1
+                                  ? "bg-stone-300 text-red-950"
+                                  : rank === 2
+                                    ? "bg-amber-600 text-white"
+                                    : "bg-red-950 text-stone-400"
+                                }`}
+                            >
+                              {rank + 1}
+                            </span>
+                            <span className="font-extrabold text-stone-100 font-mono">
+                              {re.username}
+                            </span>
+                          </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className="text-amber-400 font-black">
-                            {re.amount.toLocaleString()}đ
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-amber-400 font-black">
+                              {re.amount.toLocaleString()}đ
+                            </span>
+                          </div>
                         </div>
-                      </div>
                       ));
                     })()}
                   </div>
