@@ -133,8 +133,8 @@ export default function ProductDetailView({
                   <span className="text-stone-400 block mb-0.5 text-[10px] uppercase font-bold">
                     {t("productDetail.labelStars")}
                   </span>
-                  <span className="font-extrabold text-rose-300">
-                    {t("productDetail.starsValue", { count: account.stats.starsCount || "7" })}
+                  <span className="font-extrabold text-rose-300 whitespace-pre-line">
+                    {account.stats.starsCount || t("productDetail.starsValue", { count: "7" })}
                   </span>
                 </div>
                 <div className="bg-red-950/80 p-3 rounded-xl border border-amber-500/5">

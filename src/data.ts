@@ -1,4 +1,4 @@
-import videoConvertedGif from "./assets/images/video_converted.gif";
+﻿import videoConvertedGif from "./assets/images/video_converted.gif";
 
 export interface GameAccount {
   id: string;
@@ -13,7 +13,7 @@ export interface GameAccount {
     chronoCrystals?: number;
     vipCharacters?: string[];
     powerLevel?: number;
-    starsCount?: number;
+    starsCount?: string;
     server?: string;
   };
   details: string[];
@@ -92,7 +92,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -124,7 +124,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 22000,
       vipCharacters: ["UL Gogeta Blue", "LL Beast Gohan"],
       powerLevel: 62,
-      starsCount: 8,
+      starsCount: "★ 8 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -159,7 +159,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
         "LL Gohan Beast",
       ],
       powerLevel: 250,
-      starsCount: 14,
+      starsCount: "★ 14 Sao VIP",
       server: "Global (All platforms)",
     },
     details: [
@@ -197,7 +197,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
         "UL Cryhan",
       ],
       powerLevel: 310,
-      starsCount: 22,
+      starsCount: "★ 22 Sao VIP",
       server: "Global (All platforms)",
     },
     details: [
@@ -227,7 +227,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 40000,
       vipCharacters: ["UL Gohan Beast", "LL Gogeta"],
       powerLevel: 58,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (iOS)",
     },
     details: [
@@ -255,7 +255,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 30000,
       vipCharacters: ["UL Super Vegito"],
       powerLevel: 50,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (iOS)",
     },
     details: [
@@ -285,7 +285,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 15000,
       vipCharacters: ["UL Super Gogeta Blue"],
       powerLevel: 45,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android)",
     },
     details: [
@@ -318,7 +318,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
         "LL Gohan Beast",
       ],
       powerLevel: 250,
-      starsCount: 14,
+      starsCount: "★ 14 Sao VIP",
       server: "Global (All platforms)",
     },
     details: [
@@ -348,7 +348,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -378,7 +378,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -408,7 +408,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -438,7 +438,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -468,7 +468,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -498,7 +498,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -528,7 +528,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -558,7 +558,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [
@@ -588,7 +588,7 @@ export const INITIAL_ACCOUNTS: GameAccount[] = [
       chronoCrystals: 35000,
       vipCharacters: ["UL Broly (Green)", "LL Super Saiyan Goku"],
       powerLevel: 55,
-      starsCount: 5,
+      starsCount: "★ 5 Sao VIP",
       server: "Global (Android/iOS)",
     },
     details: [

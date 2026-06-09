@@ -742,6 +742,7 @@ export default function App() {
         originalPrice: newAcc.originalPrice,
         imageUrl: newAcc.imageUrl,
         avatarUrl: newAcc.avatarUrl,
+        stats: newAcc.stats,
         fileContent: (newAcc as any).fileContent,
       };
       await api.post("/admin/accounts", payload);

@@ -159,7 +159,9 @@ export default function AdminPanel({
   const [accountFileName, setAccountFileName] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [chronoCrystals, setChronoCrystals] = useState<number>(25000);
-  const [stars, setStars] = useState<number>(8);
+  const [stars, setStars] = useState<string>("★ 8 Sao VIP");
+  const [server, setServer] = useState<string>("Global (Android & iOS)");
+  const [powerLevel, setPowerLevel] = useState<number>(100);
   const [characters, setCharacters] = useState<string>(
     "UL Vegito Blue, LL Super Goku",
   );
@@ -181,7 +183,9 @@ export default function AdminPanel({
   const [editDiscount, setEditDiscount] = useState(10);
   const [editCategory, setEditCategory] = useState("");
   const [editChronoCrystals, setEditChronoCrystals] = useState(0);
-  const [editStars, setEditStars] = useState(0);
+  const [editStars, setEditStars] = useState("");
+  const [editServer, setEditServer] = useState("");
+  const [editPowerLevel, setEditPowerLevel] = useState(0);
   const [editCharacters, setEditCharacters] = useState("");
   const [editDetails, setEditDetails] = useState("");
   const [editAccountUser, setEditAccountUser] = useState("");
@@ -377,11 +381,11 @@ export default function AdminPanel({
       quantity: calculatedQty,
       fileContent: accountFileContent, // This will be sent to the API
       stats: {
-        chronoCrystals: 0,
+        chronoCrystals: chronoCrystals,
         vipCharacters: [],
-        powerLevel: 0,
-        starsCount: 0,
-        server: "Global (Android & iOS)",
+        powerLevel: powerLevel,
+        starsCount: stars,
+        server: server.trim() || "Global (Android & iOS)",
       },
       details: ["Giao dịch tự động siêu tốc", "Cam kết an toàn và sạch sẽ"],
       status: "Available",
@@ -419,7 +423,9 @@ export default function AdminPanel({
     setEditDiscount(calculatedDiscount);
     setEditCategory(acc.category);
     setEditChronoCrystals(acc.stats.chronoCrystals || 0);
-    setEditStars(acc.stats.starsCount || 0);
+    setEditStars(acc.stats.starsCount || "");
+    setEditServer(acc.stats.server || "");
+    setEditPowerLevel(acc.stats.powerLevel || 0);
     setEditCharacters(acc.stats.vipCharacters?.join(", ") || "");
     setEditDetails(acc.details?.join(", ") || "");
     setEditAccountUser(acc.credentials?.username || "");
@@ -473,6 +479,13 @@ export default function AdminPanel({
       imageUrl: editImageUrl.trim() || editingAcc!.imageUrl,
       avatarUrl: editImageUrl.trim() || editingAcc!.avatarUrl,
       fileContent: editAccountFileContent,
+      stats: {
+        ...editingAcc!.stats,
+        chronoCrystals: editChronoCrystals,
+        powerLevel: editPowerLevel,
+        starsCount: editStars,
+        server: editServer.trim() || editingAcc!.stats?.server,
+      },
     };
 
     onEditAccount?.(updatedAcc);
@@ -2209,6 +2222,55 @@ export default function AdminPanel({
                 </span>
               </div>
 
+              {/* Thông số hiển thị ở trang chi tiết */}
+              <div className="bg-red-950/40 p-4 rounded-2xl border border-amber-500/10 space-y-4">
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 py-0.5 px-2 rounded font-black uppercase inline-block">Thông số hiển thị</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Máy Chủ / Thiết bị</label>
+                    <input
+                      type="text"
+                      value={server}
+                      onChange={(e) => setServer(e.target.value)}
+                      placeholder="Ví dụ: Asia / Global (Android & iOS)"
+                      className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Chrono Crystals (CC)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={chronoCrystals}
+                      onChange={(e) => setChronoCrystals(Math.max(0, Number(e.target.value)))}
+                      placeholder="Ví dụ: 25000"
+                      className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Tài Nguyên (PL)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={powerLevel}
+                      onChange={(e) => setPowerLevel(Math.max(0, Number(e.target.value)))}
+                      placeholder="Ví dụ: 100"
+                      className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-bold"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-amber-300 font-bold mb-1.5 uppercase tracking-wide">Độ nổi tiếng (Sao) — nhập nhiều dòng</label>
+                    <textarea
+                      value={stars}
+                      onChange={(e) => setStars(e.target.value)}
+                      rows={3}
+                      placeholder={"★ 8 Sao VIP\nHạng PvP: Cao thủ\nSự kiện: Top 100"}
+                      className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="w-full bg-linear-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-red-950 font-black py-3 px-4 rounded-xl text-xs uppercase tracking-wide transition duration-150 transform active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/15"
@@ -2415,6 +2477,53 @@ export default function AdminPanel({
                 )}
               </div>
 
+              {/* Thông số hiển thị ở trang chi tiết */}
+              <div className="bg-red-950/60 p-4 rounded-2xl border border-amber-500/10 space-y-4">
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 py-0.5 px-2 rounded font-black uppercase inline-block">Thông số hiển thị</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-stone-300 font-bold mb-1">Máy Chủ / Thiết bị</label>
+                    <input
+                      type="text"
+                      value={editServer}
+                      onChange={(e) => setEditServer(e.target.value)}
+                      placeholder="Ví dụ: Asia / Global (Android & iOS)"
+                      className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-stone-300 font-bold mb-1">Chrono Crystals (CC)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editChronoCrystals}
+                      onChange={(e) => setEditChronoCrystals(Math.max(0, Number(e.target.value)))}
+                      className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-stone-300 font-bold mb-1">Tài Nguyên (PL)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editPowerLevel}
+                      onChange={(e) => setEditPowerLevel(Math.max(0, Number(e.target.value)))}
+                      className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 font-bold"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-stone-300 font-bold mb-1">Độ nổi tiếng (Sao) — nhập nhiều dòng</label>
+                    <textarea
+                      value={editStars}
+                      onChange={(e) => setEditStars(e.target.value)}
+                      rows={3}
+                      placeholder={"★ 8 Sao VIP\nHạng PvP: Cao thủ\nSự kiện: Top 100"}
+                      className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase transition cursor-pointer"
@@ -2551,6 +2660,22 @@ export default function AdminPanel({
                         ? Math.round((1 - selectedAcc.price / selectedAcc.originalPrice) * 100)
                         : 0}%
                     </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Máy chủ / Thiết bị:</span>
+                    <span className="font-bold text-amber-200 text-right max-w-[65%]">{selectedAcc.stats?.server || "-"}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Chrono Crystals:</span>
+                    <span className="font-bold text-emerald-400">{(selectedAcc.stats?.chronoCrystals ?? 0).toLocaleString()} CC</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-amber-500/5">
+                    <span className="text-stone-400">Tài Nguyên:</span>
+                    <span className="font-bold text-sky-300">PL {selectedAcc.stats?.powerLevel ?? 0}</span>
+                  </div>
+                  <div className="py-1">
+                    <span className="text-stone-400 block mb-1">Độ nổi tiếng (Sao):</span>
+                    <span className="font-bold text-rose-300 whitespace-pre-line block">{selectedAcc.stats?.starsCount || "-"}</span>
                   </div>
                 </div>
               </div>
