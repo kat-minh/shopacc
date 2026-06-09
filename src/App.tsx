@@ -645,7 +645,10 @@ export default function App() {
     if (!pendingAccountToBuy) return;
     const account = pendingAccountToBuy;
     try {
-      const result = await api.post<{ message: string; account: any }>(`/accounts/${account.id}/buy`);
+      const result = await api.post<{ message: string; account: any }>(
+        `/accounts/${account.id}/buy`,
+        { quantity: pendingQtyToBuy }
+      );
 
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["userMe"] });
