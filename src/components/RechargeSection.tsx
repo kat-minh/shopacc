@@ -1,6 +1,8 @@
-import { useState, FormEvent, useRef } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useToastStore } from "../store/useToastStore";
+import { api } from "../api";
 import { CARD_PROVIDERS, CARD_VALUES } from "../data";
 import {
   DollarSign,
@@ -10,7 +12,22 @@ import {
   Sparkles,
   AlertCircle,
   HelpCircle,
+  QrCode,
+  Loader2,
 } from "lucide-react";
+
+/** Thông tin chuyển khoản ngân hàng tự động (SePay) trả về từ GET /api/recharge/bank. */
+interface BankRechargeInfo {
+  transferContent: string;
+  accountNumber: string;
+  bankCode: string;
+  accountName: string;
+  amount: number | null;
+  qrUrl: string;
+}
+
+/** Mệnh giá gợi ý cho nạp chuyển khoản (đ). null = để trống, tự nhập trong app ngân hàng. */
+const BANK_AMOUNTS: number[] = [50000, 100000, 200000, 500000, 1000000, 2000000];
 
 interface RechargeSectionProps {
   onRechargeCard: (
@@ -55,8 +72,51 @@ export default function RechargeSection({
 
   // ATM formulary states
   const [copiedText, setCopiedText] = useState<string | null>(null);
-  const [atmValue, setAtmValue] = useState<number>(100000);
-  const [momoValue, setMomoValue] = useState<number>(100000);
+
+  // Nạp chuyển khoản ngân hàng (SePay – tự động cộng tiền qua webhook)
+  const queryClient = useQueryClient();
+  // Số tiền điền sẵn vào QR; null = để trống, người dùng tự nhập trong app ngân hàng.
+  const [bankAmount, setBankAmount] = useState<number | null>(100000);
+
+  const bankQuery = useQuery({
+    queryKey: ["bankRecharge", bankAmount],
+    queryFn: () =>
+      api.get<BankRechargeInfo>("/recharge/bank", {
+        params: { amount: bankAmount ?? undefined },
+      }),
+    enabled: activeTab === "atm",
+    placeholderData: keepPreviousData,
+  });
+  const bankInfo = bankQuery.data;
+
+  // Trong lúc ở tab chuyển khoản, định kỳ làm mới /auth/me để phát hiện tiền vào (webhook cộng tiền).
+  useEffect(() => {
+    if (activeTab !== "atm") return;
+    const id = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["userMe"] });
+    }, 5000);
+    return () => clearInterval(id);
+  }, [activeTab, queryClient]);
+
+  // Mốc số dư khi mở tab; số dư tăng lên => đã nhận được tiền nạp.
+  const baselineBalanceRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (activeTab === "atm") {
+      if (baselineBalanceRef.current === null) baselineBalanceRef.current = currentUser.balance;
+    } else {
+      baselineBalanceRef.current = null;
+    }
+  }, [activeTab, currentUser.balance]);
+
+  useEffect(() => {
+    if (activeTab !== "atm" || baselineBalanceRef.current === null) return;
+    if (currentUser.balance > baselineBalanceRef.current) {
+      const delta = currentUser.balance - baselineBalanceRef.current;
+      addToast(`Nạp tiền thành công! Đã cộng ${delta.toLocaleString("vi-VN")}đ vào ví.`, "success");
+      baselineBalanceRef.current = currentUser.balance;
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    }
+  }, [currentUser.balance, activeTab, addToast, queryClient]);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -124,7 +184,9 @@ export default function RechargeSection({
             : "bg-red-950/40 text-stone-300 border border-amber-500/10 hover:bg-red-950/80"
             }`}
         >
-          {t("recharge.tabAtm")}
+          <span className="inline-flex items-center gap-1.5">
+            <QrCode className="w-3.5 h-3.5" /> Chuyển khoản QR
+          </span>
         </button>
       </div>
 
@@ -253,103 +315,138 @@ export default function RechargeSection({
           </div>
         )}
 
-        {/* SUB-SECTION 2: NẠP ATM / MOMO AUTO */}
+        {/* SUB-SECTION 2: NẠP CHUYỂN KHOẢN NGÂN HÀNG (SePay – tự động) */}
         {activeTab === "atm" && (
           <div className="bg-[#4d0808]/80 p-5 sm:p-6 rounded-2xl border border-amber-500/10 space-y-5">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-b border-rose-900/40 pb-5 w-full">
-              {/* LEFT SIDE: BANKING */}
-              <div className="flex flex-col sm:flex-row items-start justify-between gap-4 bg-red-950/30 p-4 rounded-xl border border-amber-500/10 w-full">
-                <div className="space-y-1">
-                  <h4 className="font-black text-amber-300 uppercase text-xs sm:text-sm tracking-wide">
-                    {t("recharge.titleAtm")}
-                  </h4>
-                  <div className="space-y-1 mt-2 text-xs sm:text-xs font-bold text-stone-200">
-                    <p>{t("recharge.labelBank")} <span className="text-red-500 font-extrabold">{atmBank}</span></p>
-                    <p>{t("recharge.labelAccountNumber")} <span className="text-red-500 font-extrabold font-mono">{atmAccountNumber}</span></p>
-                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">{atmAccountOwner}</span></p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(atmAccountNumber, "stk_acb")}
-                    className="mt-3 bg-stone-600 hover:bg-stone-500 text-white px-3 py-1.5 text-[10px] font-bold rounded transition transform active:scale-95 duration-150 uppercase"
-                  >
-                    {copiedText === "stk_acb" ? t("recharge.copied") : t("recharge.btnCopyAccount")}
-                  </button>
-                </div>
-                {/* QR Code on the right */}
-                <div className="bg-white p-1.5 rounded-lg border border-stone-200 self-center shrink-0 flex items-center justify-center">
-                  <div className="w-20 h-20 relative bg-stone-50 flex items-center justify-center">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=STK:${atmAccountNumber}_BANK:${atmBank}_MEMO:NAP_${currentUser.username}`}
-                      alt="VietQR Bank"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                </div>
-              </div>
+            <div>
+              <h4 className="font-extrabold text-stone-100 uppercase text-lg flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-emerald-400" /> Nạp tiền qua chuyển khoản ngân hàng
+              </h4>
+              <p className="text-xs text-emerald-300 font-semibold mt-1">
+                Quét mã QR hoặc chuyển khoản đúng nội dung bên dưới. Tiền được cộng <b>tự động</b> ngay khi ngân hàng xác nhận — không cần bấm xác nhận.
+              </p>
+            </div>
 
-              {/* RIGHT SIDE: MOMO */}
-              <div className="flex flex-col sm:flex-row items-start justify-between gap-4 bg-red-950/30 p-4 rounded-xl border border-amber-500/10 w-full">
-                <div className="space-y-1">
-                  <h4 className="font-black text-amber-300 uppercase text-xs sm:text-sm tracking-wide">
-                    {t("recharge.titleMomo")}
-                  </h4>
-                  <div className="space-y-1 mt-2 text-xs sm:text-xs font-bold text-stone-200">
-                    <p>{t("recharge.labelMomo")} <span className="text-red-500 font-extrabold">MOMO</span></p>
-                    <p>{t("recharge.labelPhone")} <span className="text-red-500 font-extrabold font-mono">{momoPhone}</span></p>
-                    <p>{t("recharge.labelAccountOwner")} <span className="text-red-500 font-extrabold">{momoAccountOwner}</span></p>
-                  </div>
+            {/* Chọn mệnh giá điền sẵn vào QR */}
+            <div>
+              <label className="block font-bold text-amber-300 text-xs uppercase mb-2">
+                Số tiền muốn nạp
+              </label>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {BANK_AMOUNTS.map((val) => (
                   <button
+                    key={val}
                     type="button"
-                    onClick={() => handleCopy(momoPhone, "sdt_momo")}
-                    className="mt-3 bg-stone-600 hover:bg-stone-500 text-white px-3 py-1.5 text-[10px] font-bold rounded transition transform active:scale-95 duration-150 uppercase"
+                    onClick={() => setBankAmount(val)}
+                    className={`py-2 px-1.5 rounded-lg text-xs font-extrabold text-center border transition ${bankAmount === val
+                      ? "bg-emerald-400 text-stone-950 border-emerald-300 font-black shadow-md"
+                      : "bg-red-950/60 text-stone-300 border-amber-500/5 hover:bg-neutral-900"
+                      }`}
                   >
-                    {copiedText === "sdt_momo" ? t("recharge.copied") : t("recharge.btnCopyPhone")}
+                    {val.toLocaleString("vi-VN")}đ
                   </button>
-                </div>
-                {/* QR Code on the right */}
-                <div className="bg-white p-1.5 rounded-lg border border-stone-200 self-center shrink-0 flex items-center justify-center">
-                  <div className="w-20 h-20 relative bg-stone-50 flex items-center justify-center">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PHONE:${momoPhone}_MEMO:NAP_${currentUser.username}`}
-                      alt="Momo QR"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setBankAmount(null)}
+                  className={`py-2 px-1.5 rounded-lg text-[11px] font-extrabold text-center border transition ${bankAmount === null
+                    ? "bg-emerald-400 text-stone-950 border-emerald-300 font-black shadow-md"
+                    : "bg-red-950/60 text-stone-300 border-amber-500/5 hover:bg-neutral-900"
+                    }`}
+                >
+                  Tự nhập trong app
+                </button>
               </div>
             </div>
 
-            {/* Transfer notes syntax section */}
-            <div className="space-y-3">
-              <p className="text-xs sm:text-sm font-bold text-stone-200">{t("recharge.transferContent")}</p>
-              <div className="border-2 border-dashed border-red-500 bg-red-950/20 p-4 rounded-xl text-center">
-                <span className="font-extrabold text-red-500 text-xl tracking-wider select-all cursor-pointer">
-                  NAP {currentUser.username}
-                </span>
+            {bankQuery.isError ? (
+              <div className="p-3 rounded-xl border bg-rose-950 text-rose-300 border-rose-800 flex items-start gap-2 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Không tải được thông tin chuyển khoản. Vui lòng thử lại sau.</span>
               </div>
+            ) : !bankInfo ? (
+              <div className="flex items-center justify-center gap-2 text-stone-300 text-xs py-10">
+                <Loader2 className="w-4 h-4 animate-spin" /> Đang tạo mã QR...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-y border-emerald-900/40 py-5 w-full">
+                {/* QR thật từ API */}
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <div className="bg-white p-2 rounded-xl border border-stone-200 shrink-0">
+                    <img
+                      src={bankInfo.qrUrl}
+                      alt="VietQR chuyển khoản"
+                      className="w-48 h-48 sm:w-56 sm:h-56 object-contain"
+                    />
+                  </div>
+                  <p className="text-[11px] text-stone-400 text-center">
+                    Mở app ngân hàng → quét QR là tự điền sẵn{bankInfo.amount ? " số tiền và" : ""} nội dung.
+                  </p>
+                </div>
 
-              <button
-                onClick={() => {
-                  addToast(t("recharge.confirmSuccess"), "success");
-                }}
-                className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-black py-2.5 px-6 rounded-lg text-sm uppercase transition active:scale-95 duration-150"
-              >
-                {t("recharge.btnConfirmTransfer")}
-              </button>
+                {/* Thông tin chuyển khoản thủ công */}
+                <div className="space-y-3 bg-red-950/30 p-4 rounded-xl border border-amber-500/10">
+                  <h5 className="font-black text-amber-300 uppercase text-xs tracking-wide">
+                    Hoặc chuyển khoản thủ công
+                  </h5>
+
+                  <div className="space-y-1 text-xs font-bold text-stone-200">
+                    <p>Ngân hàng: <span className="text-emerald-400 font-extrabold">{bankInfo.bankCode}</span></p>
+                    <p>Chủ tài khoản: <span className="text-emerald-400 font-extrabold">{bankInfo.accountName}</span></p>
+                  </div>
+
+                  {/* Số tài khoản */}
+                  <div className="flex items-center justify-between gap-2 bg-red-950/60 rounded-lg px-3 py-2 border border-amber-500/10">
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-stone-400 uppercase font-bold">Số tài khoản</p>
+                      <p className="text-sm font-mono font-extrabold text-emerald-300 truncate">{bankInfo.accountNumber}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(bankInfo.accountNumber, "bank_acc")}
+                      className="shrink-0 bg-stone-600 hover:bg-stone-500 text-white p-2 rounded transition active:scale-95"
+                      title="Sao chép số tài khoản"
+                    >
+                      {copiedText === "bank_acc" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {/* Nội dung chuyển khoản — BẮT BUỘC đúng */}
+                  <div className="flex items-center justify-between gap-2 bg-red-950/60 rounded-lg px-3 py-2 border-2 border-dashed border-emerald-500">
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-stone-400 uppercase font-bold">Nội dung CK (bắt buộc đúng)</p>
+                      <p className="text-base font-mono font-black text-emerald-400 truncate select-all tracking-wider">{bankInfo.transferContent}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(bankInfo.transferContent, "bank_content")}
+                      className="shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded transition active:scale-95"
+                      title="Sao chép nội dung chuyển khoản"
+                    >
+                      {copiedText === "bank_content" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {bankInfo.amount != null && (
+                    <p className="text-xs font-bold text-stone-200">
+                      Số tiền: <span className="text-emerald-400 font-extrabold">{bankInfo.amount.toLocaleString("vi-VN")}đ</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Trạng thái chờ tiền vào (tự cập nhật) */}
+            <div className="flex items-center justify-center gap-2 text-emerald-300 text-xs font-semibold bg-emerald-950/30 border border-emerald-800/40 rounded-xl py-2.5">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Đang chờ chuyển khoản — số dư sẽ tự động cập nhật khi nhận được tiền.
             </div>
 
-            {/* Warning rules footer block */}
-            <div className="text-xs sm:text-xs text-stone-300 space-y-2 pt-2 leading-relaxed">
-              <p className="text-red-500 italic font-semibold">
-                {t("recharge.atmNotice1")}
-              </p>
-              <p className="flex items-center gap-1.5 font-semibold text-stone-200">
-                {t("recharge.atmNotice2", { content: "NAP " + currentUser.username })}
-              </p>
-              <p className="text-red-400 font-medium">
-                {t("recharge.atmNotice3")}
-              </p>
+            {/* Lưu ý */}
+            <div className="text-xs text-stone-300 space-y-1.5 leading-relaxed">
+              <p className="text-emerald-400 font-semibold">• Chuyển khoản <b>đúng nội dung</b> ở trên để hệ thống cộng tiền tự động.</p>
+              <p className="text-stone-300">• Tiền được cộng theo đúng số tiền thực nhận, thường trong vài giây đến 1–2 phút.</p>
+              <p className="text-red-400 font-medium">• Sai nội dung có thể khiến giao dịch phải đối soát thủ công, chậm hơn.</p>
             </div>
           </div>
         )}

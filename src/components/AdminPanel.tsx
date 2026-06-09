@@ -18,6 +18,12 @@ interface AdminUser {
   balance: number;
   role: string;
 }
+
+// Giao dịch cộng tiền vào ví (hiển thị dấu +, màu xanh): nạp thẻ/ATM/ngân hàng hoặc admin tặng tiền.
+const isCreditTx = (type: string) =>
+  type === "card" || type === "atm" ||
+  type === "recharge_card" || type === "recharge_atm" || type === "recharge_bank" ||
+  type === "admin_gift";
 import {
   Shield,
   Plus,
@@ -1415,7 +1421,7 @@ export default function AdminPanel({
                                 {tx.description}
                               </td>
                               <td className="px-3 py-3 text-right font-black">
-                                {tx.type === "card" || tx.type === "atm" ? (
+                                {isCreditTx(tx.type) ? (
                                   <span className="text-emerald-400">+{tx.amount.toLocaleString()}đ</span>
                                 ) : (
                                   <span className="text-rose-400">-{tx.amount.toLocaleString()}đ</span>
@@ -2649,7 +2655,7 @@ export default function AdminPanel({
               <div className="flex justify-between py-1 border-b border-amber-500/5">
                 <span className="text-stone-400">Số tiền biến động:</span>
                 <span className="font-black text-stone-100">
-                  {selectedTx.type === "card" || selectedTx.type === "atm" ? (
+                  {isCreditTx(selectedTx.type) ? (
                     <span className="text-emerald-400">+{selectedTx.amount.toLocaleString()}đ</span>
                   ) : (
                     <span className="text-rose-400">-{selectedTx.amount.toLocaleString()}đ</span>

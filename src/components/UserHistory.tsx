@@ -46,7 +46,11 @@ interface TransactionItem {
 const ITEMS_PER_PAGE = 5;
 
 const isRecharge = (type: string) =>
-  type === "card" || type === "atm" || type === "recharge_card" || type === "recharge_atm";
+  type === "card" || type === "atm" ||
+  type === "recharge_card" || type === "recharge_atm" || type === "recharge_bank";
+
+// Khoản tiền VÀO ví (cộng số dư): nạp tiền hoặc admin tặng tiền.
+const isCredit = (type: string) => isRecharge(type) || type === "admin_gift";
 
 export default function UserHistory({
   onBack,
@@ -400,6 +404,10 @@ export default function UserHistory({
                             <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 py-0.5 px-2 rounded font-extrabold block text-center max-w-20">
                               {t("history.badgeRecharge")}
                             </span>
+                          ) : tx.type === "admin_gift" ? (
+                            <span className="bg-pink-500/10 text-pink-300 border border-pink-500/20 py-0.5 px-2 rounded font-extrabold block text-center max-w-20">
+                              Quà tặng
+                            </span>
                           ) : tx.type === "buy_account" ? (
                             <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 py-0.5 px-2 rounded font-extrabold block text-center max-w-20">
                               {t("history.badgePurchase")}
@@ -414,7 +422,7 @@ export default function UserHistory({
                           {tx.description}
                         </td>
                         <td className="px-3 py-3.5 text-right font-black font-sans text-xs">
-                          {isRecharge(tx.type) ? (
+                          {isCredit(tx.type) ? (
                             <span className="text-emerald-400">
                               +{tx.amount.toLocaleString()}đ
                             </span>
