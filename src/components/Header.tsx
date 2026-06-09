@@ -67,6 +67,19 @@ export default function Header({
 
   const isGuest = currentUser.username === "Khách";
 
+  const formatHeaderBalance = (balance: number) => {
+    if (balance >= 1e9) {
+      return `${(balance / 1e9).toFixed(1).replace(/\.0$/, "")}B`;
+    }
+    if (balance >= 1e6) {
+      return `${(balance / 1e6).toFixed(1).replace(/\.0$/, "")}M`;
+    }
+    if (balance >= 1e3) {
+      return `${(balance / 1e3).toFixed(0)}K`;
+    }
+    return `${balance}đ`;
+  };
+
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
     localStorage.setItem("haina_lang", lng);
@@ -75,7 +88,7 @@ export default function Header({
 
   return (
     <header className="bg-stone-900/95 backdrop-blur-md border-b-2 border-amber-500/40 shadow-[0_4px_30px_rgba(0,0,0,0.5)] sticky top-0 z-50 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo with Premium Glow */}
         <div
           className="flex items-center gap-1.5 sm:gap-3 cursor-pointer group shrink-0"
@@ -141,7 +154,7 @@ export default function Header({
         </nav>
 
         {/* User Account area (Desktop) / Login Button */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           {/* Language Switcher Dropdown */}
           <div className="hidden sm:block relative" onMouseLeave={() => setLangDropdownOpen(false)}>
             <button
@@ -226,9 +239,18 @@ export default function Header({
                   <span className="text-[8px] text-amber-500/70 hidden sm:block uppercase font-bold tracking-wider">
                     {t("header.balance")}
                   </span>
-                  <span className="text-[10px] sm:text-xs font-black text-amber-400 font-mono flex items-center gap-0.5">
-                    <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-500 animate-spin-slow shrink-0" />
-                    {(currentUser.balance ?? 0).toLocaleString("vi-VN")}đ
+                  <span 
+                    className="text-[10px] sm:text-xs font-black text-amber-400 font-mono flex items-center gap-0.5"
+                    title={`${(currentUser.balance ?? 0).toLocaleString("vi-VN")}đ`}
+                  >
+                    <Coins className="w-3.5 h-3.5 text-yellow-500 animate-spin-slow shrink-0 hidden sm:inline-block" />
+                    <Coins className="w-3 h-3 text-yellow-500 animate-spin-slow shrink-0 sm:hidden" />
+                    <span className="sm:hidden">
+                      {formatHeaderBalance(currentUser.balance ?? 0)}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {(currentUser.balance ?? 0).toLocaleString("vi-VN")}đ
+                    </span>
                   </span>
                 </div>
 
