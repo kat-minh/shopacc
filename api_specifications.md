@@ -236,14 +236,17 @@ Tài liệu này đặc tả tất cả các API cần thiết để vận hành
 ### 4.1 Lấy danh sách nick game đã mua (Kho đồ)
 * **Endpoint**: `GET /api/user/bought-accounts`
 * **Headers**: `Authorization: Bearer <token>`
-* **Query Parameters**: `page` (Default: 1), `limit` (Default: 5)
+* **Query Parameters**:
+  - `search` (Optional): Lọc theo tiêu đề sản phẩm (không phân biệt hoa thường).
+  - `page` (Default: 1), `limit` (Default: 5)
 * **Mô tả**: Trả về danh sách các tài khoản mà user hiện tại đã mua thành công kèm tài khoản mật khẩu.
 * **Response (Success - 200)**:
 ```json
 {
   "data": [
     {
-      "id": "DBL-001",
+      "itemId": "8f3a...-guid",
+      "accountId": "DBL-001",
       "title": "ACC SIÊU VIP 50K CRYSTALS",
       "game": "Dragon Ball Legends",
       "avatarUrl": "https://...",
@@ -251,7 +254,8 @@ Tài liệu này đặc tả tất cả các API cần thiết để vận hành
         "username": "dragonball_login_gmail@gmail.com",
         "pass": "dblegendssecret123",
         "transferCode": "TC-XYZ123ABC456"
-      }
+      },
+      "soldAt": "2026-06-04T07:45:00+00:00"
     }
   ],
   "totalItems": 1,

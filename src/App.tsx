@@ -1169,8 +1169,6 @@ export default function App() {
                   )}
                   {activeView === "user-history" && (
                     <UserHistory
-                      transactions={transactions}
-                      boughtAccounts={boughtAccounts}
                       onBack={() => {
                         setActiveView("home");
                         navigate("/");
@@ -1181,8 +1179,6 @@ export default function App() {
                   )}
                   {activeView === "history" && (
                     <UserHistory
-                      transactions={transactions}
-                      boughtAccounts={boughtAccounts}
                       onBack={() => {
                         setActiveView("home");
                         navigate("/");

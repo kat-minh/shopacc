@@ -1,35 +1,109 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Transaction, GameAccount } from "../data";
-import { Copy, Check, History, Inbox } from "lucide-react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { api } from "../api";
+import { useAuthStore } from "../store/useAuthStore";
+import { Copy, Check, History, Inbox, Search, Loader2 } from "lucide-react";
 import EmptyState from "./EmptyState";
 
 interface UserHistoryProps {
-  transactions: Transaction[];
-  boughtAccounts: GameAccount[];
   onBack: () => void;
   hideHeader?: boolean;
   viewMode?: "bought" | "transactions" | "all";
 }
 
+type TxFilter = "all" | "recharge" | "purchase" | "wheel";
+
+interface PagedResult<T> {
+  data: T[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+interface BoughtAccountItem {
+  itemId: string;
+  accountId: string;
+  title: string;
+  game: string;
+  avatarUrl?: string;
+  credentials: {
+    username?: string;
+    pass?: string;
+    transferCode?: string;
+  };
+}
+
+interface TransactionItem {
+  id: string;
+  type: string;
+  amount: number;
+  description: string;
+  status: string;
+  time: string;
+}
+
+const ITEMS_PER_PAGE = 5;
+
+const isRecharge = (type: string) =>
+  type === "card" || type === "atm" || type === "recharge_card" || type === "recharge_atm";
+
 export default function UserHistory({
-  transactions,
-  boughtAccounts,
   onBack,
   hideHeader = false,
   viewMode = "all",
 }: UserHistoryProps) {
   const { t } = useTranslation();
-  const [filterType, setFilterType] = useState<
-    "all" | "recharge" | "purchase" | "wheel"
-  >("all");
+  const token = useAuthStore((s) => s.token);
+
+  const [filterType, setFilterType] = useState<TxFilter>("all");
   const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
 
-  // Pagination states
+  // Server-side pagination state
   const [boughtPage, setBoughtPage] = useState(1);
   const [txPage, setTxPage] = useState(1);
-  const BOUGHT_ITEMS_PER_PAGE = 5;
-  const TX_ITEMS_PER_PAGE = 5;
+
+  // Product title filter (debounced) for the bought-accounts section
+  const [titleInput, setTitleInput] = useState("");
+  const [titleSearch, setTitleSearch] = useState("");
+
+  const showBought = viewMode === "all" || viewMode === "bought";
+  const showTx = viewMode === "all" || viewMode === "transactions";
+
+  // Debounce the title search and reset to first page on change
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setTitleSearch(titleInput.trim());
+      setBoughtPage(1);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [titleInput]);
+
+  const boughtQuery = useQuery({
+    queryKey: ["boughtAccounts", token, boughtPage, titleSearch],
+    queryFn: () =>
+      api.get<PagedResult<BoughtAccountItem>>("/user/bought-accounts", {
+        params: { page: boughtPage, limit: ITEMS_PER_PAGE, search: titleSearch || undefined },
+      }),
+    enabled: !!token && showBought,
+    placeholderData: keepPreviousData,
+  });
+
+  const txQuery = useQuery({
+    queryKey: ["transactions", token, filterType, txPage],
+    queryFn: () =>
+      api.get<PagedResult<TransactionItem>>("/user/transactions", {
+        params: { type: filterType, page: txPage, limit: ITEMS_PER_PAGE },
+      }),
+    enabled: !!token && showTx,
+    placeholderData: keepPreviousData,
+  });
+
+  const boughtAccounts = boughtQuery.data?.data ?? [];
+  const totalBoughtPages = Math.max(1, boughtQuery.data?.totalPages ?? 1);
+
+  const transactions = txQuery.data?.data ?? [];
+  const totalTxPages = Math.max(1, txQuery.data?.totalPages ?? 1);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -37,31 +111,10 @@ export default function UserHistory({
     setTimeout(() => setCopiedLabel(null), 2000);
   };
 
-  const handleFilterChange = (type: "all" | "recharge" | "purchase" | "wheel") => {
+  const handleFilterChange = (type: TxFilter) => {
     setFilterType(type);
     setTxPage(1);
   };
-
-  const filteredTransactions = transactions.filter((t) => {
-    if (filterType === "all") return true;
-    if (filterType === "recharge") return t.type === "card" || t.type === "atm" || t.type === "recharge_card" || t.type === "recharge_atm";
-    if (filterType === "purchase") return t.type === "buy_account";
-    if (filterType === "wheel") return t.type === "wheel_spin" || t.type === "wheel";
-    return true;
-  });
-
-  // Paginated calculations
-  const totalBoughtPages = Math.max(1, Math.ceil(boughtAccounts.length / BOUGHT_ITEMS_PER_PAGE));
-  const paginatedBoughtAccounts = boughtAccounts.slice(
-    (boughtPage - 1) * BOUGHT_ITEMS_PER_PAGE,
-    boughtPage * BOUGHT_ITEMS_PER_PAGE
-  );
-
-  const totalTxPages = Math.max(1, Math.ceil(filteredTransactions.length / TX_ITEMS_PER_PAGE));
-  const paginatedTransactions = filteredTransactions.slice(
-    (txPage - 1) * TX_ITEMS_PER_PAGE,
-    txPage * TX_ITEMS_PER_PAGE
-  );
 
   return (
     <div className={`${hideHeader ? "" : "max-w-5xl mx-auto my-6"} space-y-8`}>
@@ -69,31 +122,48 @@ export default function UserHistory({
       {!hideHeader && (
         <div className="flex items-center justify-between border-b-2 border-amber-500/20 pb-4">
           <h2 className="text-xl sm:text-2xl font-black uppercase text-amber-300 tracking-wider">
-            LỊCH SỬ GIAO DỊCH
+            {t("history.pageTitle")}
           </h2>
           <button
             onClick={onBack}
             className="bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 text-amber-400 py-1.5 px-4 rounded-xl border border-amber-500/20 text-xs font-bold uppercase transition"
           >
-            ← Về Trang Chủ
+            {t("history.backHome")}
           </button>
         </div>
       )}
 
       {/* SECTION 1: KHO ĐỒ TÀI KHOẢN ĐÃ MUA */}
-      {(viewMode === "all" || viewMode === "bought") && (
+      {showBought && (
         <div className="bg-[#4d0808] p-4 sm:p-6 rounded-3xl border-2 border-amber-500/40 shadow-xl space-y-4">
-          <div className="flex items-center gap-2 border-b border-amber-500/15 pb-3">
-            <Inbox className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg md:text-xl font-black text-amber-300 uppercase tracking-wider">
-              Tài khoản game đã mua
-            </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-amber-500/15 pb-3 gap-3">
+            <div className="flex items-center gap-2">
+              <Inbox className="w-5 h-5 text-amber-400" />
+              <h3 className="text-lg md:text-xl font-black text-amber-300 uppercase tracking-wider">
+                {t("history.boughtTitle")}
+              </h3>
+            </div>
+
+            {/* Filter by product title */}
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 text-amber-400/70 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                placeholder={t("history.searchTitlePlaceholder")}
+                className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2 pl-9 pr-3 text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-amber-500/60 transition"
+              />
+              {boughtQuery.isFetching && (
+                <Loader2 className="w-4 h-4 text-amber-400 absolute right-3 top-1/2 -translate-y-1/2 animate-spin" />
+              )}
+            </div>
           </div>
 
           {boughtAccounts.length === 0 ? (
             <EmptyState
-              title={t("emptyStates.noBoughtTitle")}
-              description={t("emptyStates.noBoughtDesc")}
+              title={titleSearch ? t("history.noBoughtMatch") : t("emptyStates.noBoughtTitle")}
+              description={titleSearch ? "" : t("emptyStates.noBoughtDesc")}
               iconType="inbox"
             />
           ) : (
@@ -103,30 +173,30 @@ export default function UserHistory({
                   <thead className="text-[10px] text-amber-400 uppercase bg-[#2c0404] border-b border-amber-500/20">
                     <tr>
                       <th scope="col" className="px-3 py-3 font-black text-center w-12">
-                        STT
+                        {t("history.colNo")}
                       </th>
                       <th scope="col" className="px-3 py-3 w-32">
-                        Mã Nick
+                        {t("history.colCode")}
                       </th>
                       <th scope="col" className="px-3 py-3 min-w-[150px]">
-                        Tên sản phẩm
+                        {t("history.colProduct")}
                       </th>
                       <th scope="col" className="px-3 py-3 min-w-[160px]">
-                        Tài khoản đăng nhập
+                        {t("history.colLoginAccount")}
                       </th>
                       <th scope="col" className="px-3 py-3 min-w-[160px]">
-                        Mật khẩu
+                        {t("history.colPassword")}
                       </th>
                       <th scope="col" className="px-3 py-3 min-w-[160px]">
-                        Transfer Code
+                        {t("history.colTransferCode")}
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-500/5 bg-[#2c0404]/30">
-                    {paginatedBoughtAccounts.map((acc, index) => {
-                      const globalIdx = (boughtPage - 1) * BOUGHT_ITEMS_PER_PAGE + index;
+                    {boughtAccounts.map((acc, index) => {
+                      const globalIdx = (boughtPage - 1) * ITEMS_PER_PAGE + index;
                       return (
-                        <tr key={acc.id} className="hover:bg-red-950/30 transition">
+                        <tr key={acc.itemId} className="hover:bg-red-950/30 transition">
                           <td className="px-3 py-3.5 text-center font-mono text-stone-400 font-bold">
                             {globalIdx + 1}
                           </td>
@@ -137,8 +207,7 @@ export default function UserHistory({
                                 className="w-8 h-8 rounded object-cover border border-amber-500/20 shrink-0"
                               />
                               <span className="font-black text-amber-400 font-mono text-xs">
-                                {acc.id}
-                                {acc.quantity && acc.quantity > 1 && ` (x${acc.quantity})`}
+                                {acc.accountId}
                               </span>
                             </div>
                           </td>
@@ -149,7 +218,7 @@ export default function UserHistory({
                             <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded border border-amber-500/10 justify-between">
                               <code className="text-amber-300 font-mono font-bold truncate select-all">{acc.credentials.username}</code>
                               <button
-                                onClick={() => handleCopy(acc.credentials.username, `user_${globalIdx}`)}
+                                onClick={() => handleCopy(acc.credentials.username || "", `user_${globalIdx}`)}
                                 className="text-amber-400 hover:text-white shrink-0"
                               >
                                 {copiedLabel === `user_${globalIdx}` ? (
@@ -164,7 +233,7 @@ export default function UserHistory({
                             <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded border border-amber-500/10 justify-between">
                               <code className="text-amber-300 font-mono font-bold truncate select-all">{acc.credentials.pass}</code>
                               <button
-                                onClick={() => handleCopy(acc.credentials.pass, `pass_${globalIdx}`)}
+                                onClick={() => handleCopy(acc.credentials.pass || "", `pass_${globalIdx}`)}
                                 className="text-amber-400 hover:text-white shrink-0"
                               >
                                 {copiedLabel === `pass_${globalIdx}` ? (
@@ -209,17 +278,17 @@ export default function UserHistory({
                     onClick={() => setBoughtPage(boughtPage - 1)}
                     className="px-3 py-1.5 rounded-xl bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 disabled:opacity-30 disabled:hover:bg-stone-900/50 disabled:hover:text-amber-400 text-amber-400 text-xs font-bold transition uppercase border border-amber-500/20"
                   >
-                    ← Trước
+                    {t("history.prev")}
                   </button>
                   <span className="text-xs text-stone-300 font-black">
-                    Trang {boughtPage} / {totalBoughtPages}
+                    {t("history.pageOf", { current: boughtPage, total: totalBoughtPages })}
                   </span>
                   <button
                     disabled={boughtPage === totalBoughtPages}
                     onClick={() => setBoughtPage(boughtPage + 1)}
                     className="px-3 py-1.5 rounded-xl bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 disabled:opacity-30 disabled:hover:bg-stone-900/50 disabled:hover:text-amber-400 text-amber-400 text-xs font-bold transition uppercase border border-amber-500/20"
                   >
-                    Sau →
+                    {t("history.next")}
                   </button>
                 </div>
               )}
@@ -229,13 +298,13 @@ export default function UserHistory({
       )}
 
       {/* SECTION 2: LỊCH SỬ TẤT CẢ CÁC GIAO DỊCH */}
-      {(viewMode === "all" || viewMode === "transactions") && (
+      {showTx && (
         <div className="bg-[#4d0808] p-4 sm:p-6 rounded-3xl border-2 border-amber-500/40 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-amber-500/15 pb-3 gap-3">
           <div className="flex items-center gap-2">
             <History className="w-5 h-5 text-amber-400" />
             <h3 className="text-lg md:text-xl font-black text-amber-300 uppercase tracking-wider">
-              Lịch sử giao dịch & nạp ví
+              {t("history.txTitle")}
             </h3>
           </div>
 
@@ -249,7 +318,7 @@ export default function UserHistory({
                   : "text-stone-300 hover:text-white"
               }`}
             >
-              Tất cả
+              {t("history.filterAll")}
             </button>
             <button
               onClick={() => handleFilterChange("recharge")}
@@ -259,7 +328,7 @@ export default function UserHistory({
                   : "text-stone-300 hover:text-white"
               }`}
             >
-              Lịch sử nạp
+              {t("history.filterRecharge")}
             </button>
             <button
               onClick={() => handleFilterChange("purchase")}
@@ -269,12 +338,22 @@ export default function UserHistory({
                   : "text-stone-300 hover:text-white"
               }`}
             >
-              Lịch sử mua nick
+              {t("history.filterPurchase")}
+            </button>
+            <button
+              onClick={() => handleFilterChange("wheel")}
+              className={`py-1 px-2.5 rounded-lg font-bold transition ${
+                filterType === "wheel"
+                  ? "bg-amber-500 text-red-950 font-black"
+                  : "text-stone-300 hover:text-white"
+              }`}
+            >
+              {t("history.filterWheel")}
             </button>
           </div>
         </div>
 
-        {filteredTransactions.length === 0 ? (
+        {transactions.length === 0 ? (
           <EmptyState
             title={t("emptyStates.noTxTitle")}
             description={t("emptyStates.noTxDesc")}
@@ -289,45 +368,45 @@ export default function UserHistory({
                 <thead className="text-[10px] text-amber-400 uppercase bg-[#2c0404] border-b border-amber-500/20">
                   <tr>
                     <th scope="col" className="px-3 py-3 font-black text-center w-12">
-                      STT
+                      {t("history.colNo")}
                     </th>
                     <th scope="col" className="px-3 py-3 w-24">
-                      Loại
+                      {t("history.colType")}
                     </th>
                     <th scope="col" className="px-3 py-3 min-w-[200px]">
-                      Mô tả giao dịch
+                      {t("history.colDescription")}
                     </th>
                     <th scope="col" className="px-3 py-3 text-right w-28">
-                      Mức phí
+                      {t("history.colAmount")}
                     </th>
                     <th scope="col" className="px-3 py-3 text-center w-28">
-                      Trạng thái
+                      {t("history.colStatus")}
                     </th>
                     <th scope="col" className="px-3 py-3 text-right w-36">
-                      Mốc thời gian
+                      {t("history.colTime")}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-amber-500/5 bg-[#2c0404]/30">
-                  {paginatedTransactions.map((tx, idx) => {
-                    const globalIdx = (txPage - 1) * TX_ITEMS_PER_PAGE + idx;
+                  {transactions.map((tx, idx) => {
+                    const globalIdx = (txPage - 1) * ITEMS_PER_PAGE + idx;
                     return (
                       <tr key={tx.id} className="hover:bg-red-950/30 transition">
                         <td className="px-3 py-3.5 text-center font-mono text-stone-400 font-bold">
                           {globalIdx + 1}
                         </td>
                         <td className="px-3 py-3.5">
-                          {tx.type === "card" || tx.type === "atm" || tx.type === "recharge_card" || tx.type === "recharge_atm" ? (
+                          {isRecharge(tx.type) ? (
                             <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 py-0.5 px-2 rounded font-extrabold block text-center max-w-20">
-                              NẠP TIỀN
+                              {t("history.badgeRecharge")}
                             </span>
                           ) : tx.type === "buy_account" ? (
                             <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 py-0.5 px-2 rounded font-extrabold block text-center max-w-20">
-                              MUA NICK
+                              {t("history.badgePurchase")}
                             </span>
                           ) : (
                             <span className="bg-purple-500/10 text-purple-300 border border-purple-500/20 py-0.5 px-2 rounded font-extrabold block text-center max-w-20">
-                              VÒNG QUAY
+                              {t("history.badgeWheel")}
                             </span>
                           )}
                         </td>
@@ -335,7 +414,7 @@ export default function UserHistory({
                           {tx.description}
                         </td>
                         <td className="px-3 py-3.5 text-right font-black font-sans text-xs">
-                          {tx.type === "card" || tx.type === "atm" || tx.type === "recharge_card" || tx.type === "recharge_atm" ? (
+                          {isRecharge(tx.type) ? (
                             <span className="text-emerald-400">
                               +{tx.amount.toLocaleString()}đ
                             </span>
@@ -346,7 +425,7 @@ export default function UserHistory({
                           )}
                         </td>
                         <td className="px-3 py-3.5 text-center font-black">
-                          <span className="text-emerald-400">Thành công</span>
+                          <span className="text-emerald-400">{t("history.statusSuccess")}</span>
                         </td>
                         <td className="px-3 py-3.5 text-right font-mono text-stone-400">
                           {tx.time}
@@ -366,17 +445,17 @@ export default function UserHistory({
                   onClick={() => setTxPage(txPage - 1)}
                   className="px-3 py-1.5 rounded-xl bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 disabled:opacity-30 disabled:hover:bg-stone-900/50 disabled:hover:text-amber-400 text-amber-400 text-xs font-bold transition uppercase border border-amber-500/20"
                 >
-                  ← Trước
+                  {t("history.prev")}
                 </button>
                 <span className="text-xs text-stone-300 font-black">
-                  Trang {txPage} / {totalTxPages}
+                  {t("history.pageOf", { current: txPage, total: totalTxPages })}
                 </span>
                 <button
                   disabled={txPage === totalTxPages}
                   onClick={() => setTxPage(txPage + 1)}
                   className="px-3 py-1.5 rounded-xl bg-stone-900/50 hover:bg-amber-500 hover:text-stone-950 disabled:opacity-30 disabled:hover:bg-stone-900/50 disabled:hover:text-amber-400 text-amber-400 text-xs font-bold transition uppercase border border-amber-500/20"
                 >
-                  Sau →
+                  {t("history.next")}
                 </button>
               </div>
             )}
