@@ -549,7 +549,7 @@ export default function App() {
 
     if (isGuest && protectedViews.includes(routeView)) {
       setActiveView("login");
-      navigate("/login");
+      navigate("/login", { state: { from: location.pathname } });
       return;
     }
 
@@ -593,7 +593,12 @@ export default function App() {
     adminState: boolean,
   ) => {
     login(token, { ...user, isAdmin: adminState });
-    navigate(adminState ? "/admin" : "/");
+    if (adminState) {
+      navigate("/admin");
+    } else {
+      const from = (location.state as any)?.from || "/";
+      navigate(from);
+    }
   };
 
   // Quick sandbox fund utility
