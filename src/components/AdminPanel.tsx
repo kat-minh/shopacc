@@ -197,6 +197,8 @@ export default function AdminPanel({
   const [transferCode, setTransferCode] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(15);
   const [imageUrl, setImageUrl] = useState<string>("");
+  // Ảnh đã chọn nhưng KHOAN upload — chỉ presign + upload khi bấm "Đăng bán".
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingEditImage, setUploadingEditImage] = useState(false);
 
@@ -366,7 +368,7 @@ export default function AdminPanel({
     document.body.removeChild(link);
   };
 
-  const handleAddSubmit = (e: FormEvent) => {
+  const handleAddSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title || !accountFileContent) {
       addToast(
@@ -374,6 +376,21 @@ export default function AdminPanel({
         "error"
       );
       return;
+    }
+
+    // Tới đây user mới bấm "Đăng bán": giờ mới gọi presign + upload ảnh đang chờ.
+    let finalImageUrl = imageUrl.trim();
+    if (pendingImageFile) {
+      setUploadingImage(true);
+      try {
+        finalImageUrl = await uploadImage(pendingImageFile);
+        addToast("Tải ảnh lên thành công!", "success");
+      } catch (err: any) {
+        addToast("Tải ảnh thất bại: " + (err?.message || "Lỗi không xác định"), "error");
+        setUploadingImage(false);
+        return; // upload lỗi -> không tạo account
+      }
+      setUploadingImage(false);
     }
 
     const generatedId = "DBL-" + Math.floor(100000 + Math.random() * 900000);
@@ -402,8 +419,8 @@ export default function AdminPanel({
       price: calculatedPrice,
       originalPrice: originalPrice,
       discountPercentage: discount,
-      imageUrl: imageUrl.trim() || "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
-      avatarUrl: imageUrl.trim() || "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
+      imageUrl: finalImageUrl || "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+      avatarUrl: finalImageUrl || "https://images.unsplash.com/photo-1563089145-599997674d42?w=100&auto=format&fit=crop&q=80",
       quantity: calculatedQty,
       fileContent: accountFileContent, // This will be sent to the API
       stats: {
@@ -432,6 +449,7 @@ export default function AdminPanel({
     setOriginalPrice(185000);
     setDiscount(10);
     setImageUrl("");
+    setPendingImageFile(null);
     setAccountFileContent("");
     setAccountFileName("");
     setShowAddForm(false);
@@ -1705,7 +1723,7 @@ export default function AdminPanel({
                   >
                     <Home className="w-3.5 h-3.5 inline mr-1" /> Home
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => setContentSubTab("recharge")}
                     className={`py-1.5 px-4 rounded-xl font-bold text-xs transition uppercase ${contentSubTab === "recharge"
                       ? "bg-emerald-500 text-stone-950 shadow-md font-black"
@@ -1713,7 +1731,7 @@ export default function AdminPanel({
                       }`}
                   >
                     <Coins className="w-3.5 h-3.5 inline mr-1" /> Trang nạp
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
@@ -2230,7 +2248,10 @@ export default function AdminPanel({
                       type="text"
                       placeholder="Dán đường dẫn ảnh/video/gif (URL) hoặc tải file lên..."
                       value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
+                      onChange={(e) => {
+                        setImageUrl(e.target.value);
+                        setPendingImageFile(null); // dán URL tay -> bỏ file ảnh đang chờ upload
+                      }}
                       className="w-full bg-red-950 border border-amber-500/20 rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 text-stone-100 text-xs font-semibold"
                     />
                     <div className="flex items-center gap-2">
@@ -2254,17 +2275,14 @@ export default function AdminPanel({
                             return;
                           }
 
-                          // Ảnh: upload thẳng lên BizFly Cloud rồi lưu fileUrl.
-                          setUploadingImage(true);
-                          try {
-                            const url = await uploadImage(file);
-                            setImageUrl(url);
-                            addToast("Tải ảnh lên thành công!", "success");
-                          } catch (err: any) {
-                            addToast("Tải ảnh thất bại: " + (err?.message || "Lỗi không xác định"), "error");
-                          } finally {
-                            setUploadingImage(false);
-                          }
+                          // Ảnh: KHOAN gọi presign/upload. Chỉ giữ file + preview tại chỗ,
+                          // upload lên BizFly Cloud khi bấm nút "Đăng bán".
+                          setPendingImageFile(file);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) setImageUrl(event.target.result as string);
+                          };
+                          reader.readAsDataURL(file);
                         }}
                         className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
@@ -2807,8 +2825,8 @@ export default function AdminPanel({
                         <div className="flex justify-between items-center">
                           <span className="text-stone-400 font-mono font-bold">#{idx + 1}</span>
                           <span className={`py-0.5 px-2 rounded-full text-[9px] font-black uppercase ${item.isSold
-                              ? "bg-stone-800 text-stone-400 border border-stone-700"
-                              : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "bg-stone-800 text-stone-400 border border-stone-700"
+                            : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                             }`}>
                             {item.isSold ? "Đã bán" : "Còn hàng"}
                           </span>
@@ -2889,11 +2907,10 @@ export default function AdminPanel({
                       <button
                         key={u.id}
                         onClick={() => setGiftSelectedUser(u)}
-                        className={`w-full text-left px-3 py-2 transition flex items-center justify-between gap-2 ${
-                          giftSelectedUser?.id === u.id
+                        className={`w-full text-left px-3 py-2 transition flex items-center justify-between gap-2 ${giftSelectedUser?.id === u.id
                             ? "bg-emerald-700/30"
                             : "hover:bg-stone-900/60"
-                        }`}
+                          }`}
                       >
                         <div className="min-w-0">
                           <div className="text-xs font-bold text-stone-100 truncate">{u.email}</div>
