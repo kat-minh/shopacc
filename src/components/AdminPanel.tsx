@@ -1,6 +1,14 @@
 import { useState, FormEvent, useEffect } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { GameAccount, Transaction } from "../data";
 import { api } from "../api";
+
+interface PagedResult<T> {
+  data: T[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+}
 import {
   Shield,
   Plus,
@@ -603,70 +611,96 @@ export default function AdminPanel({
   // Extract unique users list dynamically
   const uniqueUsers = Array.from(new Set(transactions.map((t) => t.username))).filter(Boolean);
 
-  // Filter transactions
-  const filteredTxs = transactions.filter((tx) => {
-    const q = txSearch.toLowerCase();
-    const matchesSearch =
-      tx.id.toLowerCase().includes(q) ||
-      tx.username.toLowerCase().includes(q) ||
-      tx.description.toLowerCase().includes(q) ||
-      tx.type.toLowerCase().includes(q);
+  // Debounced search terms — tránh gọi API mỗi lần gõ phím
+  const [txSearchDebounced, setTxSearchDebounced] = useState("");
+  const [accSearchDebounced, setAccSearchDebounced] = useState("");
 
-    // User filter dropdown check
-    const matchesUser = txUserFilter === "All" || tx.username === txUserFilter;
+  useEffect(() => {
+    const h = setTimeout(() => {
+      setTxSearchDebounced(txSearch.trim());
+      setTxPage(1);
+    }, 400);
+    return () => clearTimeout(h);
+  }, [txSearch]);
 
-    // Price range dropdown check
-    let matchesPrice = true;
-    if (txPriceRange === "under_50k") {
-      matchesPrice = tx.amount < 50000;
-    } else if (txPriceRange === "50k_200k") {
-      matchesPrice = tx.amount >= 50000 && tx.amount <= 200000;
-    } else if (txPriceRange === "200k_500k") {
-      matchesPrice = tx.amount >= 200000 && tx.amount <= 500000;
-    } else if (txPriceRange === "over_500k") {
-      matchesPrice = tx.amount > 500000;
+  useEffect(() => {
+    const h = setTimeout(() => {
+      setAccSearchDebounced(accSearch.trim());
+      setAccPage(1);
+    }, 400);
+    return () => clearTimeout(h);
+  }, [accSearch]);
+
+  // Quy đổi các "bucket" khoảng giá ở UI sang tham số min/max gửi cho server
+  const txAmountRange = (() => {
+    switch (txPriceRange) {
+      case "under_50k": return { min: undefined, max: 50000 };
+      case "50k_200k": return { min: 50000, max: 200000 };
+      case "200k_500k": return { min: 200000, max: 500000 };
+      case "over_500k": return { min: 500000, max: undefined };
+      default: return { min: undefined, max: undefined };
     }
+  })();
 
-    return matchesSearch && matchesUser && matchesPrice;
+  const accPriceRangeParams = (() => {
+    switch (accPriceRange) {
+      case "under_100k": return { min: undefined, max: 100000 };
+      case "100k_300k": return { min: 100000, max: 300000 };
+      case "300k_1m": return { min: 300000, max: 1000000 };
+      case "over_1m": return { min: 1000000, max: undefined };
+      default: return { min: undefined, max: undefined };
+    }
+  })();
+
+  // Giao dịch — phân trang server (chỉ fetch khi đang ở tab giao dịch)
+  const txQuery = useQuery({
+    queryKey: ["transactions", "admin", txSearchDebounced, txUserFilter, txPriceRange, txPage],
+    queryFn: () =>
+      api.get<PagedResult<Transaction>>("/admin/transactions", {
+        params: {
+          search: txSearchDebounced || undefined,
+          username: txUserFilter !== "All" ? txUserFilter : undefined,
+          minAmount: txAmountRange.min,
+          maxAmount: txAmountRange.max,
+          page: txPage,
+          limit: ITEMS_PER_PAGE,
+        },
+      }),
+    enabled: activeTab === "transactions",
+    placeholderData: keepPreviousData,
   });
 
-  // Filter accounts
-  const filteredAccs = accounts.filter((acc) => {
-    const q = accSearch.toLowerCase();
-    const matchesSearch =
-      acc.id.toLowerCase().includes(q) ||
-      acc.title.toLowerCase().includes(q) ||
-      acc.category.toLowerCase().includes(q);
-
-    const matchesCategory = accGameFilter === "All" || acc.category === accGameFilter;
-    let matchesStatus = true;
-    if (accStatusFilter === "Available") {
-      matchesStatus = acc.status === "Available" && (acc.quantity === undefined || acc.quantity > 0);
-    } else if (accStatusFilter === "Sold") {
-      matchesStatus = acc.status === "Sold" || acc.quantity === 0;
-    }
-
-    // Price range dropdown check
-    let matchesPrice = true;
-    if (accPriceRange === "under_100k") {
-      matchesPrice = acc.price < 100000;
-    } else if (accPriceRange === "100k_300k") {
-      matchesPrice = acc.price >= 100000 && acc.price <= 300000;
-    } else if (accPriceRange === "300k_1m") {
-      matchesPrice = acc.price >= 300000 && acc.price <= 1000000;
-    } else if (accPriceRange === "over_1m") {
-      matchesPrice = acc.price > 1000000;
-    }
-
-    return matchesSearch && matchesCategory && matchesStatus && matchesPrice;
+  // Sản phẩm acc — phân trang server (chỉ fetch khi đang ở tab acc)
+  const accQuery = useQuery({
+    queryKey: ["accounts", "admin", accSearchDebounced, accGameFilter, accStatusFilter, accPriceRange, accPage],
+    queryFn: () =>
+      api.get<PagedResult<any>>("/admin/accounts", {
+        params: {
+          search: accSearchDebounced || undefined,
+          category: accGameFilter !== "All" ? accGameFilter : undefined,
+          status: accStatusFilter !== "All" ? accStatusFilter : undefined,
+          minPrice: accPriceRangeParams.min,
+          maxPrice: accPriceRangeParams.max,
+          page: accPage,
+          limit: ITEMS_PER_PAGE,
+        },
+      }),
+    enabled: activeTab === "accounts",
+    placeholderData: keepPreviousData,
   });
 
-  // Paginated elements
-  const totalTxPages = Math.max(1, Math.ceil(filteredTxs.length / ITEMS_PER_PAGE));
-  const paginatedTxs = filteredTxs.slice((txPage - 1) * ITEMS_PER_PAGE, txPage * ITEMS_PER_PAGE);
+  const paginatedTxs = txQuery.data?.data ?? [];
+  const totalTxPages = Math.max(1, txQuery.data?.totalPages ?? 1);
+  const totalTxItems = txQuery.data?.totalItems ?? 0;
 
-  const totalAccPages = Math.max(1, Math.ceil(filteredAccs.length / ITEMS_PER_PAGE));
-  const paginatedAccs = filteredAccs.slice((accPage - 1) * ITEMS_PER_PAGE, accPage * ITEMS_PER_PAGE);
+  // Map AccountDto (stock/isActive) -> hình dạng GameAccount mà bảng & form đang dùng
+  const paginatedAccs: GameAccount[] = (accQuery.data?.data ?? []).map((acc: any) => ({
+    ...acc,
+    quantity: acc.stock,
+    status: acc.stock > 0 ? "Available" : "Sold",
+  }));
+  const totalAccPages = Math.max(1, accQuery.data?.totalPages ?? 1);
+  const totalAccItems = accQuery.data?.totalItems ?? 0;
 
   // Helper to query account purchaser
   const getBuyerUsername = (accountId: string) => {
@@ -1179,7 +1213,7 @@ export default function AdminPanel({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-500/15">
                 <h4 className="font-extrabold uppercase text-sm text-stone-100 flex items-center gap-1.5">
                   <History className="w-4 h-4 text-amber-400" />
-                  Bảng giao dịch hệ thống ({filteredTxs.length})
+                  Bảng giao dịch hệ thống ({totalTxItems})
                 </h4>
 
                 {/* Search query input */}
@@ -1189,10 +1223,7 @@ export default function AdminPanel({
                     type="text"
                     placeholder="Tìm giao dịch, User, loại..."
                     value={txSearch}
-                    onChange={(e) => {
-                      setTxSearch(e.target.value);
-                      setTxPage(1);
-                    }}
+                    onChange={(e) => setTxSearch(e.target.value)}
                     className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
@@ -1350,7 +1381,7 @@ export default function AdminPanel({
                 <div className="flex items-center gap-3">
                   <h4 className="font-extrabold uppercase text-sm text-stone-100 flex items-center gap-1.5">
                     <Inbox className="w-4 h-4 text-amber-400" />
-                    Danh sách sản phẩm acc ({filteredAccs.length})
+                    Danh sách sản phẩm acc ({totalAccItems})
                   </h4>
                   <button
                     onClick={() => setShowAddForm(true)}
@@ -1367,10 +1398,7 @@ export default function AdminPanel({
                     type="text"
                     placeholder="Tìm theo Mã Nick, Tiêu đề..."
                     value={accSearch}
-                    onChange={(e) => {
-                      setAccSearch(e.target.value);
-                      setAccPage(1);
-                    }}
+                    onChange={(e) => setAccSearch(e.target.value)}
                     className="w-full bg-red-950/80 border border-amber-500/15 rounded-xl py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>

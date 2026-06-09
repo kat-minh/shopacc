@@ -369,9 +369,25 @@ Tài liệu này đặc tả tất cả các API cần thiết để vận hành
 }
 ```
 
+### 6.3b Lấy danh sách sản phẩm cho trang quản trị (phân trang)
+* **Endpoint**: `GET /api/admin/accounts`
+* **Headers**: `Authorization: Bearer <token>` (Role Admin)
+* **Query Parameters**:
+  - `search` (Optional): Tìm theo Mã nick / Tiêu đề / Game.
+  - `category` (Optional): Lọc theo tên danh mục.
+  - `status` (Optional): `Available` (còn hàng) | `Sold` (hết hàng).
+  - `minPrice`, `maxPrice` (Optional): Khoảng giá bán.
+  - `page` (Default: 1), `limit` (Default: 8)
+* **Mô tả**: Danh sách toàn bộ nick (kể cả đã hết hàng / tạm ẩn) cho bảng quản trị, kèm tồn kho. Khác `/api/accounts` (storefront trả full-list nick đang bán).
+* **Response (Success - 200)**: `PagedResult<AccountDto>` — `{ data: [{ id, game, category, title, price, originalPrice, imageUrl, avatarUrl, stats, details, isActive, stock, soldCount }], totalItems, totalPages, currentPage }`
+
 ### 6.4 Lấy lịch sử tất cả giao dịch hệ thống (Star log)
 * **Endpoint**: `GET /api/admin/transactions`
-* **Query Parameters**: `search` (Optional), `page` (Default: 1), `limit` (Default: 8)
+* **Query Parameters**:
+  - `search` (Optional): Tìm theo Mã GD / Mô tả / Email người dùng.
+  - `username` (Optional): Lọc đúng theo email người dùng.
+  - `minAmount`, `maxAmount` (Optional): Khoảng giá trị biến động.
+  - `page` (Default: 1), `limit` (Default: 8)
 * **Response (Success - 200)**:
 ```json
 {
