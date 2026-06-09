@@ -10,9 +10,6 @@ import {
   LuckyWheelGame,
   LuckyWheelPrize,
   Transaction,
-  TopRecharger,
-  INITIAL_TOP_RECHARGERS_JUNE,
-  INITIAL_TOP_RECHARGERS_MAY,
   INITIAL_ACCOUNTS,
 } from "./data";
 import Header from "./components/Header";
@@ -98,7 +95,7 @@ const pathToView = (pathname: string): AppView => {
 };
 
 export default function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -189,6 +186,39 @@ export default function App() {
     }>("/settings"),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // 8. Leaderboard nạp tiền (đua top) — tháng hiện tại & tháng trước
+  type LeaderboardResult = {
+    year: number;
+    month: number;
+    items: { rank: number; username: string; amount: number }[];
+  };
+
+  const currentLeaderboard = useQuery({
+    queryKey: ["leaderboard", "current"],
+    queryFn: () =>
+      api.get<LeaderboardResult>("/leaderboard/recharge", {
+        params: { period: "current", limit: 5 },
+      }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const previousLeaderboard = useQuery({
+    queryKey: ["leaderboard", "previous"],
+    queryFn: () =>
+      api.get<LeaderboardResult>("/leaderboard/recharge", {
+        params: { period: "previous", limit: 5 },
+      }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Nhãn 2 tab = 2 tháng gần nhất (lấy year/month từ API; fallback theo ngày hiện tại khi chưa tải xong)
+  const nowDate = new Date();
+  const prevDate = new Date(nowDate.getFullYear(), nowDate.getMonth() - 1, 1);
+  const currentMonthMeta = currentLeaderboard.data ?? { year: nowDate.getFullYear(), month: nowDate.getMonth() + 1 };
+  const previousMonthMeta = previousLeaderboard.data ?? { year: prevDate.getFullYear(), month: prevDate.getMonth() + 1 };
+  const formatMonthLabel = (meta: { year: number; month: number }) =>
+    new Intl.DateTimeFormat(i18n.language, { month: "short" }).format(new Date(meta.year, meta.month - 1, 1));
 
   // Sync userMe data to store
   useEffect(() => {
@@ -289,7 +319,7 @@ export default function App() {
   );
 
   // Top recharger ranking display tabs
-  const [activeMonthTab, setActiveMonthTab] = useState<"june" | "may">("june");
+  const [activeMonthTab, setActiveMonthTab] = useState<"current" | "previous">("current");
 
   // Track expanded state for categories product grids
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
@@ -1384,31 +1414,40 @@ export default function App() {
                     {/* Month selectors */}
                     <div className="flex bg-red-950 p-0.5 rounded-lg text-[9px] border border-amber-500/10">
                       <button
-                        onClick={() => setActiveMonthTab("june")}
-                        className={`py-0.5 px-1 rounded font-bold transition ${activeMonthTab === "june"
+                        onClick={() => setActiveMonthTab("current")}
+                        className={`py-0.5 px-1 rounded font-bold transition uppercase ${activeMonthTab === "current"
                           ? "bg-amber-500 text-red-950 font-black"
                           : "text-stone-300"
                           }`}
                       >
-                        {t("home.monthJune")}
+                        {formatMonthLabel(currentMonthMeta)}
                       </button>
                       <button
-                        onClick={() => setActiveMonthTab("may")}
-                        className={`py-0.5 px-1 rounded font-bold transition ${activeMonthTab === "may"
+                        onClick={() => setActiveMonthTab("previous")}
+                        className={`py-0.5 px-1 rounded font-bold transition uppercase ${activeMonthTab === "previous"
                           ? "bg-amber-500 text-red-950 font-black"
                           : "text-stone-300"
                           }`}
                       >
-                        {t("home.monthMay")}
+                        {formatMonthLabel(previousMonthMeta)}
                       </button>
                     </div>
                   </div>
 
                   <div className="space-y-2 mt-3">
-                    {(activeMonthTab === "june"
-                      ? INITIAL_TOP_RECHARGERS_JUNE
-                      : INITIAL_TOP_RECHARGERS_MAY
-                    ).map((re, rank) => (
+                    {(() => {
+                      const items =
+                        (activeMonthTab === "current"
+                          ? currentLeaderboard.data?.items
+                          : previousLeaderboard.data?.items) ?? [];
+                      if (items.length === 0) {
+                        return (
+                          <p className="text-[10px] text-stone-400 text-center py-4 italic">
+                            {t("home.topRankEmpty")}
+                          </p>
+                        );
+                      }
+                      return items.map((re, rank) => (
                       <div
                         key={rank}
                         className="flex items-center justify-between bg-red-950/60 p-2 rounded-xl border border-amber-500/10 text-[10px]"
@@ -1437,7 +1476,8 @@ export default function App() {
                           </span>
                         </div>
                       </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </div>
 

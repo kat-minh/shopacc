@@ -292,6 +292,29 @@ Tài liệu này đặc tả tất cả các API cần thiết để vận hành
 
 ---
 
+## 5. Leaderboard (Đua top nạp tiền — Public)
+
+### 5.1 Top người nạp tiền theo tháng
+* **Endpoint**: `GET /api/leaderboard/recharge`
+* **Headers**: Không yêu cầu đăng nhập (hiển thị công khai ở trang chủ).
+* **Query Parameters**:
+  - `period` (Optional): `current` (mặc định — tháng hiện tại) | `previous` (tháng trước). Mốc tháng tính theo giờ Việt Nam (UTC+7).
+  - `limit` (Default: 5, tối đa 100)
+* **Mô tả**: Tổng tiền nạp **thành công** (thẻ cào + ATM/MoMo) theo từng người dùng trong tháng, xếp giảm dần.
+* **Response (Success - 200)**:
+```json
+{
+  "year": 2026,
+  "month": 6,
+  "items": [
+    { "rank": 1, "username": "hoang_legends", "amount": 418000 },
+    { "rank": 2, "username": "Kien_Rerol", "amount": 374000 }
+  ]
+}
+```
+
+---
+
 ## 6. Admin Panel Dashboard (Hệ thống Quản trị - Quyền Admin)
 
 > **Lưu ý**: Tất cả các API trong mục này yêu cầu Headers `Authorization: Bearer <token>` và tài khoản phải có quyền `isAdmin: true` kiểm tra trên backend.
