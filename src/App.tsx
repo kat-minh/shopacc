@@ -317,7 +317,7 @@ export default function App() {
   const [footerPhone, setFooterPhone] = useState<string>("0399.88.11.22");
   const [footerZalo, setFooterZalo] = useState<string>("https://zalo.me/17506391");
   const [footerFacebook, setFooterFacebook] = useState<string>("https://facebook.com/hainagaming");
-  const [footerBrandName, setFooterBrandName] = useState<string>("Hải Na Gaming");
+  const [footerBrandName, setFooterBrandName] = useState<string>("Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend");
   const [footerAboutText, setFooterAboutText] = useState<string>("Siêu thị Account Reroll Dragon Ball Legends tự động số 1 Việt Nam. Uy tín, chất lượng và an toàn bảo mật tuyệt đối.");
   const [footerHours, setFooterHours] = useState<string>("07:00 - 24:00 (Cả CN & Ngày lễ)");
   const [footerPolicy, setFooterPolicy] = useState<string>("Hệ thống giao dịch hoàn toàn tự động 24/7. Vui lòng đọc kỹ điều khoản mua acc trước khi thanh toán.");
@@ -604,7 +604,7 @@ export default function App() {
         pin,
       });
       addToast(result.message || "Gửi thẻ cào thành công và đang chờ xử lý!", "success");
-      
+
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["userMe"] });
       return true;
@@ -646,7 +646,7 @@ export default function App() {
     const account = pendingAccountToBuy;
     try {
       const result = await api.post<{ message: string; account: any }>(`/accounts/${account.id}/buy`);
-      
+
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["userMe"] });
       queryClient.invalidateQueries({ queryKey: ["boughtAccounts"] });
@@ -1459,8 +1459,8 @@ export default function App() {
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={`py-2 px-4.5 rounded-xl text-xs font-bold transition uppercase cursor-pointer ${selectedCategory === cat
-                      ? "bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/20"
-                      : "bg-stone-900/40 text-stone-300 border border-amber-500/10 hover:bg-stone-900/80 hover:text-amber-400"
+                    ? "bg-amber-500 text-stone-950 font-black shadow-md shadow-amber-500/20"
+                    : "bg-stone-900/40 text-stone-300 border border-amber-500/10 hover:bg-stone-900/80 hover:text-amber-400"
                     }`}
                 >
                   {t("categories." + cat, cat)}

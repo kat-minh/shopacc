@@ -119,7 +119,7 @@ export default function Footer({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 mt-10 pt-6 border-t border-amber-950/80 text-center text-xs text-stone-500">
-        <p>© {new Date().getFullYear()} {brandName || "Hải Na Gaming"}. {t("footer.footerRights")}</p>
+        <p>© {new Date().getFullYear()} {brandName || "Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend"}. {t("footer.footerRights")}</p>
       </div>
     </footer>
   );

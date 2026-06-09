@@ -405,8 +405,8 @@ export default function AdminPanel({
     setEditPrice(acc.price);
     setEditOriginalPrice(acc.originalPrice);
     setDisplayEditOriginalPrice(acc.originalPrice.toLocaleString("vi-VN"));
-    const calculatedDiscount = acc.originalPrice > 0 
-      ? Math.round((1 - acc.price / acc.originalPrice) * 100) 
+    const calculatedDiscount = acc.originalPrice > 0
+      ? Math.round((1 - acc.price / acc.originalPrice) * 100)
       : 0;
     setEditDiscount(calculatedDiscount);
     setEditCategory(acc.category);
@@ -1644,7 +1644,7 @@ export default function AdminPanel({
                           value={localBrandName}
                           onChange={(e) => setLocalBrandName(e.target.value)}
                           className="w-full bg-red-950/85 border border-amber-500/20 rounded-xl py-2 px-3 text-xs text-stone-100 font-bold"
-                          placeholder="Ví dụ: Hải Na Gaming"
+                          placeholder="Ví dụ: Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend"
                           required
                         />
                       </div>
@@ -2367,7 +2367,7 @@ export default function AdminPanel({
                     />
                   </label>
                 </div>
-                
+
                 {loadingItems ? (
                   <div className="text-center py-4 text-stone-500 text-xs">
                     Đang tải danh sách tài khoản...
@@ -2519,8 +2519,8 @@ export default function AdminPanel({
                   <div className="flex justify-between py-1 border-b border-amber-500/5">
                     <span className="text-stone-400">Giảm giá:</span>
                     <span className="font-black text-emerald-400">
-                      {selectedAcc.originalPrice > 0 
-                        ? Math.round((1 - selectedAcc.price / selectedAcc.originalPrice) * 100) 
+                      {selectedAcc.originalPrice > 0
+                        ? Math.round((1 - selectedAcc.price / selectedAcc.originalPrice) * 100)
                         : 0}%
                     </span>
                   </div>
@@ -2532,7 +2532,7 @@ export default function AdminPanel({
                 <span className="text-[10px] text-amber-300 uppercase font-black tracking-widest block border-b border-amber-500/10 pb-1.5">
                   Danh sách tài khoản trong kho ({accountItems.length})
                 </span>
-                
+
                 {loadingItems ? (
                   <div className="text-center py-6 text-stone-500 text-xs">
                     Đang tải danh sách tài khoản...
@@ -2547,11 +2547,10 @@ export default function AdminPanel({
                       <div key={item.itemId || idx} className="bg-black/40 p-2.5 rounded-xl border border-amber-500/5 space-y-1 relative text-[11px]">
                         <div className="flex justify-between items-center">
                           <span className="text-stone-400 font-mono font-bold">#{idx + 1}</span>
-                          <span className={`py-0.5 px-2 rounded-full text-[9px] font-black uppercase ${
-                            item.isSold 
-                              ? "bg-stone-800 text-stone-400 border border-stone-700" 
+                          <span className={`py-0.5 px-2 rounded-full text-[9px] font-black uppercase ${item.isSold
+                              ? "bg-stone-800 text-stone-400 border border-stone-700"
                               : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          }`}>
+                            }`}>
                             {item.isSold ? "Đã bán" : "Còn hàng"}
                           </span>
                         </div>

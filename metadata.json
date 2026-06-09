@@ -1,6 +1,8 @@
 {
-  "name": "Hải Na Gaming",
+  "name": "Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend",
   "description": "Hệ thống mua bán tài khoản Dragon Ball Legends tự động uy tín chất lượng - hainagaming.com.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

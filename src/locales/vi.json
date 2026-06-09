@@ -38,12 +38,12 @@
     "hoursValue": "Sáng 07:00 - Khuya 23:30",
     "policyTitle": "CHÍNH SÁCH BÁN HÀNG",
     "policyDesc": "Mọi thông tin chuyển khoản qua Ngân hàng hoặc Ví MoMo, quý khách vui lòng nhập đúng nội dung chuyển khoản được in trên hệ thống để được cộng tệ tự động ngay lập tức.",
-    "copyright": "Co-branding và vận hành bởi hainagaming.com. Bản quyền thuộc về Hải Na Gaming 2026.",
+    "copyright": "Co-branding và vận hành bởi hainagaming.com. Bản quyền thuộc về Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend 2026.",
     "footerRights": "© 2026 hainagaming.com All rights reserved - Hệ Thống Vận Hành Tự Động Toàn Diện."
   },
   "userProfile": {
     "title": "Thông tin tài khoản cá nhân",
-    "subtitle": "Quản lý hồ sơ thành viên Hải Na Gaming",
+    "subtitle": "Quản lý hồ sơ thành viên Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend",
     "usernameId": "Tên tài khoản / ID",
     "roleAdmin": "Quản trị viên",
     "roleMember": "Thành viên",
@@ -69,7 +69,7 @@
   },
   "loginForm": {
     "title": "ĐĂNG NHẬP HỆ THỐNG",
-    "subtitle": "Hải Na Gaming - Giao dịch tự động siêu tốc",
+    "subtitle": "Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend - Giao dịch tự động siêu tốc",
     "tabCustomer": "KHÁCH HÀNG",
     "tabAdmin": "QUẢN TRỊ VIÊN",
     "customerIdLabel": "Tài khoản ID khách hàng",
@@ -91,7 +91,7 @@
   },
   "registerForm": {
     "title": "ĐĂNG KÝ THÀNH VIÊN",
-    "subtitle": "Tạo tài khoản Hải Na Gaming",
+    "subtitle": "Tạo tài khoản Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend",
     "usernameLabel": "Tài khoản / Username",
     "usernamePlaceholder": "Nhập tên tài khoản...",
     "passwordLabel": "Mật khẩu / Password",
@@ -177,7 +177,7 @@
     "backHome": "← Về Trang Chủ",
     "accCode": "MÃ ACC: {{id}}",
     "serverShort": "SERVER: {{server}}",
-    "warrantyTitle": "HẢI NA GAMING AUTO",
+    "warrantyTitle": "Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend AUTO",
     "warrantySub": "Đại lý bảo hành đổi trả trong 24 Giờ",
     "labelServerDevice": "Máy Chủ / Thiết bị",
     "labelChrono": "Chrono Crystals",
