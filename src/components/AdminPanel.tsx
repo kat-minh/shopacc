@@ -596,7 +596,7 @@ export default function AdminPanel({
               chronoCrystals: rowCrystals,
               vipCharacters: parsedCharacters.length > 0 ? parsedCharacters : ["Reroll Starter"],
               powerLevel: Math.floor(rowCrystals / 400) + 10,
-              starsCount: rowStars,
+              starsCount: rowStars > 0 ? `★ ${rowStars} Sao VIP` : "",
               server: "Global (Android & iOS)",
             },
             details: parsedDetails.length > 0 ? parsedDetails : ["Giao dịch tự động siêu tốc", "Bảo hành 1 đổi 1"],
