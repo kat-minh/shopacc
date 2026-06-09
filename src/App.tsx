@@ -337,6 +337,7 @@ export default function App() {
 
   // Recharge sub-tabs
   const [rechargeTab, setRechargeTab] = useState<"card" | "atm">("card");
+  const [pendingRechargeTab, setPendingRechargeTab] = useState<"card" | "atm" | null>(null);
 
   // Web Content Customization States
   const [tickerNews, setTickerNews] = useState<string>("Hệ thống bán acc Dragon Ball Legends tự động hainagaming.com đang tặng giftcode mừng máy chủ mới! Nạp Momo / ATM cộng 10% giá trị.");
@@ -597,7 +598,12 @@ export default function App() {
     login(token, { ...user, isAdmin: adminState });
     const destination = postLoginRedirect ?? (adminState ? "/admin" : "/");
     navigate(destination);
+    // Restore pending recharge sub-tab after login if navigating to recharge
+    if (destination.startsWith("/recharge") && pendingRechargeTab) {
+      setRechargeTab(pendingRechargeTab);
+    }
     setPostLoginRedirect(null);
+    setPendingRechargeTab(null);
   };
 
   // Quick sandbox fund utility
@@ -1077,14 +1083,15 @@ export default function App() {
       {activeView !== "admin" && (
         <Header
           currentUser={currentUser}
-          onNavigate={(view, subTab) => {
+          onNavigate: (view, subTab) => {
             setActiveView(view);
             if (view === "recharge" && subTab) {
               setRechargeTab(subTab);
+              setPendingRechargeTab(subTab);
             }
             setSelectedAccount(null);
             navigate(viewToPath(view));
-          }}
+          },
           activeView={activeView}
           onLogout={handleLogout}
           onQuickAddMoney={handleQuickAddMoney}
