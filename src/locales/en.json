@@ -183,7 +183,7 @@
     "labelChrono": "Chrono Crystals",
     "labelStars": "Stars Count",
     "starsValue": "★ {{count}} Stars VIP",
-    "labelPowerLevel": "VIP Power Level",
+    "labelPowerLevel": "Resource",
     "powerLevelValue": "PL {{level}}",
     "marketPrice": "Market Price: {{price}}đ",
     "savePercent": "SAVE {{percent}}%",
