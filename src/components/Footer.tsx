@@ -30,9 +30,6 @@ export default function Footer({
         {/* About column */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="bg-amber-400 text-red-950 px-2.5 py-1 rounded-lg font-black text-sm">
-              {brandName ? brandName.split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase() : "HN"}
-            </div>
             <h4 className="text-lg font-black text-amber-400 uppercase tracking-widest">
               {brandName || t("header.title")}
             </h4>
