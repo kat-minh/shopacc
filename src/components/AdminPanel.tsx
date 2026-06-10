@@ -258,8 +258,12 @@ export default function AdminPanel({
   const [editingCategoryNewName, setEditingCategoryNewName] = useState("");
   const [deleteCategoryConfirm, setDeleteCategoryConfirm] = useState<string | null>(null);
 
+  // Đồng bộ category đang chọn với danh sách category thực tế.
+  // Khi categories từ API load xong (khác với default localStorage), nếu giá trị đang chọn
+  // KHÔNG còn nằm trong danh sách thì snap về phần tử đầu — tránh gửi lên 1 category "ma"
+  // (select hiển thị option đầu nhưng state vẫn giữ giá trị cũ không có trong options).
   useEffect(() => {
-    if (!category && categories.length > 0) {
+    if (categories.length > 0 && !categories.includes(category)) {
       setCategory(categories[0]);
     }
   }, [categories, category]);
