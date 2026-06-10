@@ -1110,6 +1110,19 @@ export default function App() {
     ...categories,
   ];
 
+  // Danh mục để render. Gộp danh mục cấu hình (/categories) VỚI các category thực tế
+  // có trong dữ liệu sản phẩm — nếu không, một acc có category không nằm trong list sẽ
+  // bị "mất tích" (filteredAccounts > 0 nên không hiện EmptyState mà cũng không có nhóm nào render).
+  const categoriesToRender =
+    selectedCategory === "Tất cả"
+      ? Array.from(
+          new Set([
+            ...categoriesList.filter((c) => c !== "Tất cả"),
+            ...filteredAccounts.map((a) => a.category),
+          ]),
+        ).filter(Boolean)
+      : [selectedCategory];
+
   if (!isBootstrapped) {
     return <LoadingState message={t("loading.bootstrap")} fullScreen />;
   }
@@ -1678,8 +1691,7 @@ export default function App() {
               />
             ) : (
               <div className="space-y-12">
-                {categoriesList
-                  .filter((cat) => cat !== "Tất cả" && (selectedCategory === "Tất cả" || selectedCategory === cat))
+                {categoriesToRender
                   .map((cat) => {
                     const accountsInCat = filteredAccounts.filter((acc) => acc.category === cat);
                     const limit = isDesktop ? 8 : 4;
