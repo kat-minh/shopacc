@@ -139,10 +139,35 @@ export default function App() {
 
   const queryClient = useQueryClient();
 
-  // 1. Get available accounts
+  // Price sort/filter (user-facing on home catalog) — gửi lên API để lọc/sắp xếp phía server.
+  const [priceSort, setPriceSort] = useState<"default" | "asc" | "desc">("default");
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  // Debounce ô nhập giá để không gọi API mỗi lần gõ phím.
+  const [appliedMinPrice, setAppliedMinPrice] = useState<string>("");
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState<string>("");
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppliedMinPrice(minPrice.trim());
+      setAppliedMaxPrice(maxPrice.trim());
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [minPrice, maxPrice]);
+
+  const apiSortValue =
+    priceSort === "asc" ? "price_asc" : priceSort === "desc" ? "price_desc" : undefined;
+
+  // 1. Get available accounts (lọc & sắp xếp theo giá ngay trên server)
   const { data: apiAccounts } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => api.get<GameAccount[]>("/accounts"),
+    queryKey: ["accounts", apiSortValue ?? "default", appliedMinPrice, appliedMaxPrice],
+    queryFn: () =>
+      api.get<GameAccount[]>("/accounts", {
+        params: {
+          sort: apiSortValue,
+          minPrice: appliedMinPrice !== "" ? Number(appliedMinPrice) : undefined,
+          maxPrice: appliedMaxPrice !== "" ? Number(appliedMaxPrice) : undefined,
+        },
+      }),
   });
 
   // 2. Get user me details
@@ -302,10 +327,6 @@ export default function App() {
   // Filtering states in the Home Catalog
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  // Price sort/filter (user-facing on home catalog)
-  const [priceSort, setPriceSort] = useState<"default" | "asc" | "desc">("default");
-  const [minPrice, setMinPrice] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
   const [selectedAccount, setSelectedAccount] = useState<GameAccount | null>(
     null,
   );
@@ -1061,30 +1082,19 @@ export default function App() {
     setTimeout(() => setCopiedReceiptItem(null), 2000);
   };
 
-  // Catalog item filtering calculations
-  const minPriceNum = minPrice.trim() === "" ? null : Number(minPrice);
-  const maxPriceNum = maxPrice.trim() === "" ? null : Number(maxPrice);
-
-  const filteredAccounts = accounts
-    .filter((acc) => {
-      const matchesCategory =
-        selectedCategory === "Tất cả" || acc.category === selectedCategory;
-      const matchesSearch =
-        acc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        acc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        acc.stats.vipCharacters?.some((char) =>
-          char.toLowerCase().includes(searchTerm.toLowerCase()),
-        );
-      const matchesPrice =
-        (minPriceNum === null || Number.isNaN(minPriceNum) || acc.price >= minPriceNum) &&
-        (maxPriceNum === null || Number.isNaN(maxPriceNum) || acc.price <= maxPriceNum);
-      return matchesCategory && matchesSearch && matchesPrice;
-    })
-    .sort((a, b) => {
-      if (priceSort === "asc") return a.price - b.price;
-      if (priceSort === "desc") return b.price - a.price;
-      return 0;
-    });
+  // Catalog item filtering. Lọc giá & sắp xếp đã làm ở server (API /accounts);
+  // ở client chỉ lọc thêm theo danh mục & từ khóa tìm kiếm, GIỮ NGUYÊN thứ tự server trả về.
+  const filteredAccounts = accounts.filter((acc) => {
+    const matchesCategory =
+      selectedCategory === "Tất cả" || acc.category === selectedCategory;
+    const matchesSearch =
+      acc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      acc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      acc.stats.vipCharacters?.some((char) =>
+        char.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    return matchesCategory && matchesSearch;
+  });
 
   const isPriceFilterActive =
     priceSort !== "default" || minPrice.trim() !== "" || maxPrice.trim() !== "";
