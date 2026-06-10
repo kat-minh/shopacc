@@ -32,6 +32,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 import { useToastStore } from "./store/useToastStore";
 import { AppView, useAuthStore } from "./store/useAuthStore";
 import heroBannerMp4 from "./assets/images/enhanced_final.mp4";
+import heroBannerPoster from "./assets/images/final.gif";
 
 import {
   Trophy,
@@ -540,6 +541,30 @@ export default function App() {
     return () => {
       active = false;
       cancelAnimationFrame(frameId);
+    };
+  }, []);
+
+  // Ensure the hero video actually autoplays on real mobile devices.
+  // React doesn't reliably reflect the `muted` JSX prop to the DOM `muted`
+  // property, so mobile browsers treat the video as unmuted and block
+  // autoplay (desktop is more lenient, which is why it works in PC responsive
+  // testing but the banner appears blank on a real phone). Force-mute via the
+  // DOM property and retry play() once the data is ready.
+  useEffect(() => {
+    const video = videoBannerRef.current;
+    if (!video) return;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("muted", "");
+    const tryPlay = () => {
+      video.play().catch(() => { });
+    };
+    tryPlay();
+    video.addEventListener("loadeddata", tryPlay);
+    video.addEventListener("canplay", tryPlay);
+    return () => {
+      video.removeEventListener("loadeddata", tryPlay);
+      video.removeEventListener("canplay", tryPlay);
     };
   }, []);
 
@@ -1366,8 +1391,10 @@ export default function App() {
                 <video
                   ref={videoBannerRef}
                   src={heroBannerMp4}
+                  poster={heroBannerPoster}
                   autoPlay
                   muted
+                  loop
                   playsInline
                   preload="auto"
                   className="w-full h-full object-cover relative z-10"
