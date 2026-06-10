@@ -219,7 +219,15 @@
     "monthJune": "T.6",
     "monthMay": "T.5",
     "showMore": "Xem thêm",
-    "showLess": "Thu gọn"
+    "showLess": "Thu gọn",
+    "sortLabel": "Sắp xếp",
+    "sortDefault": "Mặc định",
+    "sortPriceAsc": "Giá: Thấp → Cao",
+    "sortPriceDesc": "Giá: Cao → Thấp",
+    "priceFrom": "Giá từ",
+    "priceTo": "Đến",
+    "resultsLabel": "kết quả",
+    "clearPriceFilter": "Xóa lọc giá"
   },
   "categories": {
     "Tất cả": "Tất cả",

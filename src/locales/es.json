@@ -219,7 +219,15 @@
     "monthJune": "Jun",
     "monthMay": "May",
     "showMore": "Ver más",
-    "showLess": "Mostrar menos"
+    "showLess": "Mostrar menos",
+    "sortLabel": "Ordenar",
+    "sortDefault": "Predeterminado",
+    "sortPriceAsc": "Precio: Bajo → Alto",
+    "sortPriceDesc": "Precio: Alto → Bajo",
+    "priceFrom": "Desde",
+    "priceTo": "Hasta",
+    "resultsLabel": "resultados",
+    "clearPriceFilter": "Borrar filtro de precio"
   },
   "categories": {
     "Tất cả": "Todo",

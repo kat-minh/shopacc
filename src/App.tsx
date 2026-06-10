@@ -54,6 +54,8 @@ import {
   Zap,
   AlertTriangle,
   X,
+  ArrowUpDown,
+  Tag,
 } from "lucide-react";
 
 const viewToPath = (view: AppView, accountId?: string | null) => {
@@ -93,6 +95,22 @@ const pathToView = (pathname: string): AppView => {
   if (pathname.startsWith("/recharge")) return "recharge";
   if (pathname.startsWith("/product/")) return "product-detail";
   return "home";
+};
+
+// Derive a Messenger chat link from the configured Facebook fanpage URL.
+// Examples:
+//   https://www.facebook.com/profile.php?id=61590028476569
+//     -> https://www.messenger.com/e2ee/t/61590028476569
+//   https://facebook.com/hainagaming -> https://m.me/hainagaming
+const buildMessengerLink = (facebookUrl: string): string => {
+  if (!facebookUrl) return "";
+  // profile.php?id=<numeric id>
+  const idMatch = facebookUrl.match(/[?&]id=(\d+)/);
+  if (idMatch) return `https://www.messenger.com/e2ee/t/${idMatch[1]}`;
+  // username form: facebook.com/<username>
+  const userMatch = facebookUrl.match(/facebook\.com\/([^/?#]+)/i);
+  if (userMatch && userMatch[1] !== "profile.php") return `https://m.me/${userMatch[1]}`;
+  return facebookUrl;
 };
 
 export default function App() {
@@ -284,6 +302,10 @@ export default function App() {
   // Filtering states in the Home Catalog
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  // Price sort/filter (user-facing on home catalog)
+  const [priceSort, setPriceSort] = useState<"default" | "asc" | "desc">("default");
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
   const [selectedAccount, setSelectedAccount] = useState<GameAccount | null>(
     null,
   );
@@ -348,7 +370,7 @@ export default function App() {
   const [momoAccountOwner, setMomoAccountOwner] = useState<string>("DOAN KHAC Y");
   const [footerPhone, setFooterPhone] = useState<string>("0399.88.11.22");
   const [footerZalo, setFooterZalo] = useState<string>("https://zalo.me/17506391");
-  const [footerFacebook, setFooterFacebook] = useState<string>("https://facebook.com/hainagaming");
+  const [footerFacebook, setFooterFacebook] = useState<string>("https://www.facebook.com/profile.php?id=61590028476569");
   const [footerBrandName, setFooterBrandName] = useState<string>("Hainagaming || Siêu Thị Account Reroll Dragon Ball Legend");
   const [footerAboutText, setFooterAboutText] = useState<string>("Siêu thị Account Reroll Dragon Ball Legends tự động số 1 Việt Nam. Uy tín, chất lượng và an toàn bảo mật tuyệt đối.");
   const [footerHours, setFooterHours] = useState<string>("07:00 - 24:00 (Cả CN & Ngày lễ)");
@@ -1021,7 +1043,7 @@ export default function App() {
     setMomoAccountOwner("DOAN KHAC Y");
     setFooterPhone("0399.88.11.22");
     setFooterZalo("https://zalo.me/17506391");
-    setFooterFacebook("https://facebook.com/hainagaming");
+    setFooterFacebook("https://www.facebook.com/profile.php?id=61590028476569");
 
     const defaultUser = { username: "hoang_gamer99", balance: 500000 };
     syncUser(defaultUser, false);
@@ -1040,17 +1062,38 @@ export default function App() {
   };
 
   // Catalog item filtering calculations
-  const filteredAccounts = accounts.filter((acc) => {
-    const matchesCategory =
-      selectedCategory === "Tất cả" || acc.category === selectedCategory;
-    const matchesSearch =
-      acc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      acc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      acc.stats.vipCharacters?.some((char) =>
-        char.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
-    return matchesCategory && matchesSearch;
-  });
+  const minPriceNum = minPrice.trim() === "" ? null : Number(minPrice);
+  const maxPriceNum = maxPrice.trim() === "" ? null : Number(maxPrice);
+
+  const filteredAccounts = accounts
+    .filter((acc) => {
+      const matchesCategory =
+        selectedCategory === "Tất cả" || acc.category === selectedCategory;
+      const matchesSearch =
+        acc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        acc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        acc.stats.vipCharacters?.some((char) =>
+          char.toLowerCase().includes(searchTerm.toLowerCase()),
+        );
+      const matchesPrice =
+        (minPriceNum === null || Number.isNaN(minPriceNum) || acc.price >= minPriceNum) &&
+        (maxPriceNum === null || Number.isNaN(maxPriceNum) || acc.price <= maxPriceNum);
+      return matchesCategory && matchesSearch && matchesPrice;
+    })
+    .sort((a, b) => {
+      if (priceSort === "asc") return a.price - b.price;
+      if (priceSort === "desc") return b.price - a.price;
+      return 0;
+    });
+
+  const isPriceFilterActive =
+    priceSort !== "default" || minPrice.trim() !== "" || maxPrice.trim() !== "";
+
+  const resetPriceFilters = () => {
+    setPriceSort("default");
+    setMinPrice("");
+    setMaxPrice("");
+  };
 
   const categoriesList = [
     "Tất cả",
@@ -1545,6 +1588,71 @@ export default function App() {
               ))}
             </div>
 
+            {/* Price Sort & Filter Bar */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Sort by price */}
+              <div className="flex items-center gap-2 bg-stone-900/40 border border-amber-500/10 rounded-xl pl-3 pr-2 py-1.5">
+                <ArrowUpDown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 hidden sm:inline">
+                  {t("home.sortLabel", "Sắp xếp")}
+                </span>
+                <select
+                  value={priceSort}
+                  onChange={(e) => setPriceSort(e.target.value as "default" | "asc" | "desc")}
+                  className="bg-transparent text-xs font-bold text-stone-100 focus:outline-none cursor-pointer"
+                >
+                  <option value="default" className="bg-stone-900 text-stone-100">
+                    {t("home.sortDefault", "Mặc định")}
+                  </option>
+                  <option value="asc" className="bg-stone-900 text-stone-100">
+                    {t("home.sortPriceAsc", "Giá: Thấp → Cao")}
+                  </option>
+                  <option value="desc" className="bg-stone-900 text-stone-100">
+                    {t("home.sortPriceDesc", "Giá: Cao → Thấp")}
+                  </option>
+                </select>
+              </div>
+
+              {/* Price range filter */}
+              <div className="flex items-center gap-1.5 bg-stone-900/40 border border-amber-500/10 rounded-xl px-3 py-1.5">
+                <Tag className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  placeholder={t("home.priceFrom", "Giá từ")}
+                  className="w-16 sm:w-20 bg-transparent text-xs font-bold text-stone-100 placeholder-stone-500 focus:outline-none"
+                />
+                <span className="text-stone-500 text-xs">–</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder={t("home.priceTo", "Đến")}
+                  className="w-16 sm:w-20 bg-transparent text-xs font-bold text-stone-100 placeholder-stone-500 focus:outline-none"
+                />
+                <span className="text-[10px] text-stone-500 font-bold">đ</span>
+              </div>
+
+              {/* Active filter summary + clear */}
+              <span className="text-[10px] font-bold text-amber-500/80 hidden md:inline">
+                {filteredAccounts.length} {t("home.resultsLabel", "kết quả")}
+              </span>
+              {isPriceFilterActive && (
+                <button
+                  onClick={resetPriceFilters}
+                  className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-stone-300 bg-stone-900/60 border border-amber-500/10 rounded-xl px-2.5 py-1.5 hover:text-amber-400 hover:border-amber-400/40 transition cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  {t("home.clearPriceFilter", "Xóa lọc giá")}
+                </button>
+              )}
+            </div>
+
             {/* Grid Products Cards divided by categories */}
             {filteredAccounts.length === 0 ? (
               <EmptyState
@@ -1555,6 +1663,7 @@ export default function App() {
                 onAction={() => {
                   setSelectedCategory("Tất cả");
                   setSearchTerm("");
+                  resetPriceFilters();
                 }}
               />
             ) : (
@@ -1849,7 +1958,7 @@ export default function App() {
 
           {/* Messenger Button */}
           <a
-            href={footerFacebook.includes("facebook.com/") ? footerFacebook.replace("facebook.com/", "m.me/") : footerFacebook}
+            href={buildMessengerLink(footerFacebook)}
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 rounded-full bg-linear-to-tr from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/30 hover:scale-110 hover:-rotate-6 transition duration-300 relative group animate-pulse cursor-pointer"
