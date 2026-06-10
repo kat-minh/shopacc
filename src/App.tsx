@@ -879,6 +879,7 @@ export default function App() {
   };
 
   const handleUpdateFooterLinks = async (links: {
+    tickerNews?: string;
     phone: string;
     zalo: string;
     facebook: string;
@@ -888,6 +889,10 @@ export default function App() {
     policy?: string;
     copyright?: string;
   }) => {
+    if (links.tickerNews !== undefined) {
+      setTickerNews(links.tickerNews);
+      localStorage.setItem("haina_ticker_news", links.tickerNews);
+    }
     setFooterPhone(links.phone);
     setFooterZalo(links.zalo);
     setFooterFacebook(links.facebook);
@@ -923,6 +928,7 @@ export default function App() {
     }
 
     await persistSettingsToApi({
+      ...(links.tickerNews !== undefined ? { tickerNews: links.tickerNews } : {}),
       footerPhone: links.phone,
       footerZalo: links.zalo,
       footerFacebook: links.facebook,

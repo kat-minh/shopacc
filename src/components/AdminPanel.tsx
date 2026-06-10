@@ -92,6 +92,7 @@ interface AdminPanelProps {
   footerPolicy: string;
   footerCopyright: string;
   onUpdateFooterLinks: (links: {
+    tickerNews?: string;
     phone: string;
     zalo: string;
     facebook: string;
@@ -1739,8 +1740,8 @@ export default function AdminPanel({
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    onUpdateTickerNews(localTicker);
                     onUpdateFooterLinks({
+                      tickerNews: localTicker,
                       phone: localPhone,
                       zalo: localZalo,
                       facebook: localFacebook,
