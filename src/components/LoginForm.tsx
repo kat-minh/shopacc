@@ -106,21 +106,6 @@ export default function LoginForm({
             <User className="w-4 h-4" />
             {t("loginForm.tabCustomer")}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setRole("admin");
-              setError("");
-            }}
-            className={`py-2 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center gap-1.5 ${
-              role === "admin"
-                ? "bg-red-600 text-white font-black shadow-md"
-                : "text-stone-300 hover:text-stone-100"
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            {t("loginForm.tabAdmin")}
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
