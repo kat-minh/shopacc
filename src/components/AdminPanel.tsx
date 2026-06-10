@@ -201,6 +201,8 @@ export default function AdminPanel({
   // Ảnh đã chọn nhưng KHOAN upload — chỉ presign + upload khi bấm "Đăng bán".
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  // Ảnh edit đã chọn nhưng KHOAN upload — chỉ presign + upload khi bấm "Cập nhật".
+  const [pendingEditImageFile, setPendingEditImageFile] = useState<File | null>(null);
   const [uploadingEditImage, setUploadingEditImage] = useState(false);
 
   // Edit account form states
@@ -479,6 +481,7 @@ export default function AdminPanel({
     setEditStatus(acc.status);
     setEditQuantity(acc.quantity || 1);
     setEditImageUrl(acc.imageUrl || "");
+    setPendingEditImageFile(null);
     setEditAccountFileContent("");
     setEditAccountFileName("");
 
@@ -505,11 +508,26 @@ export default function AdminPanel({
     setEditingAcc(acc);
   };
 
-  const handleEditSubmit = (e: FormEvent) => {
+  const handleEditSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!editId || !editTitle) {
       addToast("Vui lòng điền các trường bắt buộc!", "error");
       return;
+    }
+
+    // Tới đây user mới bấm "Cập nhật": giờ mới gọi presign + upload ảnh đang chờ.
+    let finalImageUrl = editImageUrl.trim();
+    if (pendingEditImageFile) {
+      setUploadingEditImage(true);
+      try {
+        finalImageUrl = await uploadImage(pendingEditImageFile);
+        addToast("Tải ảnh lên thành công!", "success");
+      } catch (err: any) {
+        addToast("Tải ảnh thất bại: " + (err?.message || "Lỗi không xác định"), "error");
+        setUploadingEditImage(false);
+        return; // upload lỗi -> không cập nhật account
+      }
+      setUploadingEditImage(false);
     }
 
     const calculatedPrice = Math.round(editOriginalPrice * (1 - editDiscount / 100));
@@ -521,8 +539,8 @@ export default function AdminPanel({
       title: editTitle.trim(),
       price: calculatedPrice,
       originalPrice: editOriginalPrice,
-      imageUrl: editImageUrl.trim() || editingAcc!.imageUrl,
-      avatarUrl: editImageUrl.trim() || editingAcc!.avatarUrl,
+      imageUrl: finalImageUrl || editingAcc!.imageUrl,
+      avatarUrl: finalImageUrl || editingAcc!.avatarUrl,
       fileContent: editAccountFileContent,
       stats: {
         ...editingAcc!.stats,
@@ -534,6 +552,7 @@ export default function AdminPanel({
     };
 
     onEditAccount?.(updatedAcc);
+    setPendingEditImageFile(null);
     setNotif(`Đã cập nhật thành công tài khoản mã ${editId}!`);
     setTimeout(() => setNotif(""), 3000);
     setEditingAcc(null);
@@ -2464,7 +2483,10 @@ export default function AdminPanel({
                       type="text"
                       placeholder="Dán đường dẫn ảnh (URL) hoặc tải ảnh lên bên dưới..."
                       value={editImageUrl}
-                      onChange={(e) => setEditImageUrl(e.target.value)}
+                      onChange={(e) => {
+                        setEditImageUrl(e.target.value);
+                        setPendingEditImageFile(null); // dán URL tay -> bỏ file ảnh đang chờ upload
+                      }}
                       className="w-full bg-red-950 border border-amber-500/15 rounded-xl py-2 px-3 focus:outline-none text-stone-100 text-xs"
                     />
                     <div className="flex items-center gap-2">
@@ -2473,20 +2495,32 @@ export default function AdminPanel({
                         type="file"
                         accept="image/*"
                         disabled={uploadingEditImage}
-                        onChange={async (e) => {
+                        onChange={(e) => {
                           const file = e.target.files?.[0];
                           e.target.value = ""; // cho phép chọn lại cùng file
                           if (!file) return;
-                          setUploadingEditImage(true);
-                          try {
-                            const url = await uploadImage(file);
-                            setEditImageUrl(url);
-                            addToast("Tải ảnh lên thành công!", "success");
-                          } catch (err: any) {
-                            addToast("Tải ảnh thất bại: " + (err?.message || "Lỗi không xác định"), "error");
-                          } finally {
-                            setUploadingEditImage(false);
+
+                          // Video: backend chưa hỗ trợ upload -> giữ fallback nhúng base64.
+                          if (!isUploadableImage(file)) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result) {
+                                setEditImageUrl(event.target.result as string);
+                                setPendingEditImageFile(null);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                            return;
                           }
+
+                          // Ảnh: KHOAN gọi presign/upload. Chỉ giữ file + preview tại chỗ,
+                          // upload lên BizFly Cloud khi bấm nút "Cập nhật".
+                          setPendingEditImageFile(file);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) setEditImageUrl(event.target.result as string);
+                          };
+                          reader.readAsDataURL(file);
                         }}
                         className="text-xs text-stone-300 file:bg-stone-900 file:text-amber-400 file:border file:border-amber-500/20 file:py-1 file:px-3 file:rounded-xl file:mr-2 file:cursor-pointer hover:file:bg-amber-500 hover:file:text-stone-950 file:transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
@@ -2651,9 +2685,10 @@ export default function AdminPanel({
 
               <button
                 type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase transition cursor-pointer"
+                disabled={uploadingEditImage}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Lưu thay đổi
+                {uploadingEditImage ? "Đang tải ảnh lên..." : "Lưu thay đổi"}
               </button>
             </form>
           </div>
