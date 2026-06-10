@@ -24,7 +24,13 @@ export default function ProductCard({
     <div className="bg-[#1c0202]/90 rounded-2xl border border-amber-500/10 hover:border-amber-400/50 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative flex flex-col h-full justify-between p-3.5">
       <div>
         {/* Top Image Banner Section */}
-        <div className="h-36 sm:h-44 w-full bg-stone-900 relative rounded-xl overflow-hidden mb-3">
+        {/* translateZ(0) isolates this onto its own GPU layer so the constantly
+            repainting hero video + marquee don't force an animated GIF here to
+            re-rasterize (which caused the flicker). */}
+        <div
+          className="h-36 sm:h-44 w-full bg-stone-900 relative rounded-xl overflow-hidden mb-3"
+          style={{ transform: "translateZ(0)", willChange: "transform" }}
+        >
           {/* Detect large base64 images and show placeholder instead */}
           {account.imageUrl && account.imageUrl.startsWith("data:") ? (
             <div
@@ -39,7 +45,9 @@ export default function ProductCard({
               src={account.imageUrl}
               alt={account.title}
               loading="lazy"
-              className="w-full h-full object-cover transition transform hover:scale-105 duration-500 cursor-pointer"
+              decoding="async"
+              className="w-full h-full object-cover transition-transform hover:scale-105 duration-500 cursor-pointer"
+              style={{ backfaceVisibility: "hidden" }}
               onClick={() => onSelect(account)}
               onError={(e) => {
                 const target = e.currentTarget;
