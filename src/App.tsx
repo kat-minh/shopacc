@@ -654,7 +654,7 @@ export default function App() {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    window.location.href = "/";
   };
 
   const handleLoginSuccess = (
@@ -1116,11 +1116,11 @@ export default function App() {
   const categoriesToRender =
     selectedCategory === "Tất cả"
       ? Array.from(
-          new Set([
-            ...categoriesList.filter((c) => c !== "Tất cả"),
-            ...filteredAccounts.map((a) => a.category),
-          ]),
-        ).filter(Boolean)
+        new Set([
+          ...categoriesList.filter((c) => c !== "Tất cả"),
+          ...filteredAccounts.map((a) => a.category),
+        ]),
+      ).filter(Boolean)
       : [selectedCategory];
 
   if (!isBootstrapped) {
