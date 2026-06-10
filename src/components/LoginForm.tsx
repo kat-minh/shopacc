@@ -90,38 +90,7 @@ export default function LoginForm({
         </div>
 
         {/* Role Picker (Tabs) */}
-        <div className="grid grid-cols-2 mb-6 bg-red-950 p-1.5 rounded-2xl border border-amber-500/20">
-          <button
-            type="button"
-            onClick={() => {
-              setRole("user");
-              setError("");
-            }}
-            className={`py-2 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center gap-1.5 ${
-              role === "user"
-                ? "bg-amber-500 text-red-950 font-black shadow-md"
-                : "text-stone-300 hover:text-white"
-            }`}
-          >
-            <User className="w-4 h-4" />
-            {t("loginForm.tabCustomer")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setRole("admin");
-              setError("");
-            }}
-            className={`py-2 px-3 rounded-xl font-bold text-xs md:text-sm transition flex items-center justify-center gap-1.5 ${
-              role === "admin"
-                ? "bg-red-600 text-white font-black shadow-md"
-                : "text-stone-300 hover:text-stone-100"
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            {t("loginForm.tabAdmin")}
-          </button>
-        </div>
+      
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {role === "user" ? (
